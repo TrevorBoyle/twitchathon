@@ -1,0 +1,552 @@
+<!doctype html>
+<!--
+  Twitchathon Map Editor
+  Copyright (c) 2026 Trevor Boyle
+  Licensed under MIT + Commons Clause — see LICENSE in the project root.
+  Commons Clause restricts the right to sell this software or a service
+  substantially derived from it. Non-commercial use, forking, and
+  modification are permitted.
+-->
+<html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Twitchathon Map Editor</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Newsreader:ital,wght@0,500;0,600;1,500&family=Archivo:wght@500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap');
+
+  :root{
+    --paper:#f5efdc;
+    --paper-2:#ece2c2;
+    --card:#fffcf3;
+    --ink:#2b2417;
+    --ink-soft:#6d6146;
+    --line:#d8c99a;
+    --accent:#3f6b46;
+    --accent-soft:#e2ecdf;
+    --accent-2:#b8622c;
+    --accent-2-soft:#f3e1cd;
+    --danger:#a5402f;
+    --danger-soft:#f3ded9;
+    --shadow-card:0 1px 2px rgba(43,36,23,0.07), 0 6px 18px -10px rgba(43,36,23,0.22);
+    --map-bg:#141d17;
+    --map-road:#a3875a;
+    --map-road-hot:#f2b355;
+    --map-node:#63b06f;
+    --map-node-coastal:#5ea0d6;
+    --map-node-hub:#e2a35e;
+    --map-text:#eef1e6;
+    --map-text-muted:#9aa398;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --paper:#171510;
+      --paper-2:#1e1b14;
+      --card:#211e17;
+      --ink:#ece5d2;
+      --ink-soft:#a89e83;
+      --line:#3a3527;
+      --accent:#7fbf8c;
+      --accent-soft:#213026;
+      --accent-2:#e2a35e;
+      --accent-2-soft:#332619;
+      --danger:#e08670;
+      --danger-soft:#3a2420;
+      --shadow-card:0 1px 2px rgba(0,0,0,0.3), 0 8px 20px -8px rgba(0,0,0,0.5);
+    }
+  }
+  :root[data-theme="dark"]{
+    --paper:#171510;
+    --paper-2:#1e1b14;
+    --card:#211e17;
+    --ink:#ece5d2;
+    --ink-soft:#a89e83;
+    --line:#3a3527;
+    --accent:#7fbf8c;
+    --accent-soft:#213026;
+    --accent-2:#e2a35e;
+    --accent-2-soft:#332619;
+    --danger:#e08670;
+    --danger-soft:#3a2420;
+    --shadow-card:0 1px 2px rgba(0,0,0,0.3), 0 8px 20px -8px rgba(0,0,0,0.5);
+  }
+
+  *{box-sizing:border-box;}
+  html,body{height:100%;}
+  body{margin:0;background:var(--paper);color:var(--ink);font-family:'Archivo',sans-serif;}
+  h1,h2,h3{font-family:'Newsreader',Georgia,serif;color:var(--ink);text-wrap:balance;margin:0;}
+  .mono{font-family:'JetBrains Mono',monospace;font-variant-numeric:tabular-nums;}
+  #app{max-width:900px;margin:0 auto;padding:24px 16px 48px;display:flex;flex-direction:column;gap:18px;}
+
+  header .eyebrow{font-family:'JetBrains Mono',monospace;font-size:.68rem;letter-spacing:.14em;text-transform:uppercase;color:var(--accent);margin-bottom:6px;}
+  header h1{font-size:1.7rem;font-weight:600;letter-spacing:-.01em;}
+  header p{color:var(--ink-soft);font-size:.92rem;margin-top:8px;max-width:60ch;line-height:1.5;}
+  header .stats{display:flex;gap:14px;margin-top:10px;font-family:'JetBrains Mono',monospace;font-size:.72rem;color:var(--ink-soft);}
+  header .stats b{color:var(--ink);}
+
+  .toolbar{display:flex;flex-wrap:wrap;gap:14px 20px;align-items:center;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px 16px;box-shadow:var(--shadow-card);}
+  .modetoggle{display:flex;gap:6px;}
+  .modetoggle button{font-family:'Archivo',sans-serif;font-weight:600;font-size:.8rem;border:1px solid var(--line);background:var(--paper);color:var(--ink);border-radius:20px;padding:8px 14px;cursor:pointer;transition:background .12s,color .12s,border-color .12s;}
+  .modetoggle button.active{background:var(--accent);border-color:var(--accent);color:var(--paper);}
+  .scalewrap{display:flex;align-items:center;gap:10px;flex:1;min-width:220px;}
+  .scalewrap label{font-size:.72rem;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.04em;white-space:nowrap;}
+  .scalewrap input[type=range]{flex:1;accent-color:var(--accent);}
+  .scalewrap .val{font-size:.76rem;color:var(--ink);white-space:nowrap;}
+  #resetBtn{font-family:'Archivo',sans-serif;font-weight:600;font-size:.8rem;border:1px solid var(--line);background:transparent;color:var(--ink-soft);border-radius:20px;padding:8px 14px;cursor:pointer;}
+  #resetBtn:hover{border-color:var(--danger);color:var(--danger);}
+
+  .hint{font-size:.82rem;color:var(--ink-soft);font-style:italic;font-family:'Newsreader',serif;margin:0;padding:0 2px;}
+
+  .mapwrap{border:1px solid var(--line);border-radius:14px;background:var(--map-bg);padding:6px;box-shadow:var(--shadow-card);overflow:hidden;}
+  .mapwrap svg{width:100%;height:auto;display:block;border-radius:9px;touch-action:none;}
+  .road-hit{fill:none;stroke:transparent;stroke-width:16;pointer-events:none;}
+  #app.mode-roads .road-hit{pointer-events:stroke;cursor:pointer;}
+  .road-line{fill:none;stroke-linecap:round;}
+  .road-label{font-family:'JetBrains Mono',monospace;font-size:9.5px;}
+  .node-label{font-family:'Newsreader',serif;font-size:12.5px;}
+  .site-node{cursor:default;}
+  #app.mode-move .site-node{cursor:grab;}
+  #app.mode-roads .site-node{cursor:pointer;}
+  .select-ring{fill:none;stroke:var(--accent-2);stroke-width:2.5;}
+
+  .panels{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+  @media (max-width:640px){ .panels{grid-template-columns:1fr;} }
+  .panel{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;box-shadow:var(--shadow-card);display:flex;flex-direction:column;gap:10px;min-width:0;}
+  .panel h2{font-size:1.02rem;font-weight:600;display:flex;align-items:baseline;gap:6px;}
+  .panel h2 .count{font-family:'JetBrains Mono',monospace;font-size:.68rem;color:var(--ink-soft);font-weight:400;}
+  .panel .sub{font-size:.78rem;color:var(--ink-soft);margin:-4px 0 2px;line-height:1.4;}
+
+  .roadlist{display:flex;flex-direction:column;max-height:280px;overflow-y:auto;border-top:1px solid var(--line);}
+  .road-row{display:flex;align-items:center;gap:8px;padding:8px 2px;border-bottom:1px solid var(--line);font-size:.8rem;}
+  .road-names{flex:1;min-width:0;}
+  .road-names .arrow{color:var(--ink-soft);}
+  .road-time{color:var(--ink-soft);white-space:nowrap;}
+  .road-remove{flex:none;width:22px;height:22px;padding:0;border-radius:50%;border:1px solid var(--line);background:transparent;color:var(--ink-soft);cursor:pointer;font-size:.9rem;line-height:1;}
+  .road-remove:hover{border-color:var(--danger);color:var(--danger);}
+  .empty{color:var(--ink-soft);font-size:.82rem;font-style:italic;padding:10px 2px;}
+
+  .addroad{display:flex;flex-wrap:wrap;gap:6px;align-items:center;}
+  .addroad select{font-family:'Archivo',sans-serif;font-size:.8rem;background:var(--paper);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:7px 8px;flex:1;min-width:120px;}
+  .addroad span{color:var(--ink-soft);}
+  .addroad button{font-family:'Archivo',sans-serif;font-weight:600;font-size:.8rem;border:1px solid var(--accent);background:var(--accent);color:var(--paper);border-radius:8px;padding:8px 12px;cursor:pointer;white-space:nowrap;}
+
+  textarea{width:100%;font-family:'JetBrains Mono',monospace;font-size:.7rem;line-height:1.4;background:var(--paper);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:8px;resize:vertical;min-height:90px;}
+  .panel label.fieldlabel{font-family:'JetBrains Mono',monospace;font-size:.62rem;text-transform:uppercase;letter-spacing:.05em;color:var(--ink-soft);margin-top:4px;}
+  .copybtn{font-family:'Archivo',sans-serif;font-weight:600;font-size:.76rem;border:1px solid var(--line);background:var(--paper);color:var(--ink);border-radius:8px;padding:6px 10px;cursor:pointer;align-self:flex-start;}
+  .copybtn:hover{border-color:var(--accent);color:var(--accent);}
+
+  footer{font-family:'JetBrains Mono',monospace;font-size:.68rem;color:var(--ink-soft);text-align:center;padding-top:6px;}
+</style>
+
+<div id="app" class="mode-move">
+  <header>
+    <div class="eyebrow">Twitchathon &middot; companion tool</div>
+    <h1>Map Editor</h1>
+    <p>Drag locations to reposition them on the Twitchathon map, wire up roads between them, and rescale travel times &mdash; then copy the export at the bottom back into the game.</p>
+    <div class="stats"><span><b id="statSites">12</b> locations</span><span><b id="statRoads">0</b> roads</span></div>
+  </header>
+
+  <div class="toolbar">
+    <div class="modetoggle">
+      <button data-mode="move" class="active">Move locations</button>
+      <button data-mode="roads">Edit roads</button>
+    </div>
+    <div class="scalewrap">
+      <label for="scaleSlider">Pace</label>
+      <input type="range" id="scaleSlider" min="40" max="220" value="100" step="5">
+      <span class="mono val" id="scaleLabel"></span>
+    </div>
+    <button id="resetBtn">Reset to original</button>
+  </div>
+
+  <p class="hint" id="modeHint"></p>
+
+  <div class="mapwrap">
+    <svg id="mapSvg" viewBox="0 0 700 440" xmlns="http://www.w3.org/2000/svg"></svg>
+  </div>
+
+  <div class="panels">
+    <section class="panel">
+      <h2>Roads <span class="count" id="roadCountLabel"></span></h2>
+      <p class="sub">Times are computed live from the distance between markers, at the current pace.</p>
+      <div class="roadlist" id="roadList"></div>
+      <div class="addroad">
+        <select id="fromSelect"></select>
+        <span>&harr;</span>
+        <select id="toSelect"></select>
+        <button id="addRoadBtn">Add road</button>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>Export to the game</h2>
+      <p class="sub">The game already has a slot for these &mdash; a <span class="mono">MANUAL_ROADS</span> override right below <span class="mono">SITE_POSITIONS</span>. Paste both blocks in to replace them.</p>
+      <label class="fieldlabel">SITE_POSITIONS</label>
+      <textarea id="posExport" readonly rows="5"></textarea>
+      <button class="copybtn" data-copy="posExport">Copy positions</button>
+      <label class="fieldlabel">MANUAL_ROADS</label>
+      <textarea id="roadsExport" readonly rows="7"></textarea>
+      <button class="copybtn" data-copy="roadsExport">Copy roads</button>
+    </section>
+  </div>
+
+  <footer>Twitchathon map editor &middot; changes here don&rsquo;t touch the live game until you paste the export in</footer>
+</div>
+
+<script>
+(function(){
+"use strict";
+
+var SITE_ORDER = ["bordertownwetlands","mountmonster","banghamcp","padthawaycp","mcinwheel","penolacp","lakeleake","beachportlagoon","naracoortecaves","hackslagoon","boollagoon","mullingerswampcp"];
+var SITE_NAMES = {
+  bordertownwetlands:"Bordertown Wetlands and Sewage Ponds",
+  mountmonster:"Mount Monster Conservation Park",
+  banghamcp:"Bangham Conservation Park",
+  padthawaycp:"Padthaway Conservation Park",
+  mcinwheel:"Lake McInwheel",
+  penolacp:"Penola Conservation Park",
+  lakeleake:"Lake Leake",
+  beachportlagoon:"Beachport Lagoon",
+  naracoortecaves:"Naracoorte Caves National Park",
+  hackslagoon:"Hacks Lagoon Conservation Reserve",
+  boollagoon:"Bool Lagoon Game Reserve",
+  mullingerswampcp:"Mullinger Swamp Conservation Park"
+};
+var HUB_ID = "bordertownwetlands";
+var COASTAL_ID = "beachportlagoon";
+
+var INITIAL_POSITIONS = {
+  bordertownwetlands:{ x:360, y:210 },
+  mountmonster:     { x:300, y:130 },
+  banghamcp:        { x:560, y:80  },
+  padthawaycp:      { x:430, y:70  },
+  mcinwheel:        { x:230, y:300 },
+  penolacp:         { x:190, y:400 },
+  lakeleake:        { x:90,  y:340 },
+  beachportlagoon:  { x:60,  y:410 },
+  naracoortecaves:  { x:560, y:300 },
+  hackslagoon:      { x:480, y:380 },
+  boollagoon:       { x:620, y:400 },
+  mullingerswampcp: { x:640, y:250 }
+};
+
+var INITIAL_EDGES = [
+  ["mountmonster","mcinwheel"],
+  ["mountmonster","bordertownwetlands"],
+  ["mountmonster","padthawaycp"],
+  ["mcinwheel","bordertownwetlands"],
+  ["mcinwheel","penolacp"],
+  ["mcinwheel","lakeleake"],
+  ["naracoortecaves","bordertownwetlands"],
+  ["naracoortecaves","hackslagoon"],
+  ["naracoortecaves","boollagoon"],
+  ["naracoortecaves","mullingerswampcp"],
+  ["bordertownwetlands","padthawaycp"],
+  ["bordertownwetlands","hackslagoon"],
+  ["banghamcp","padthawaycp"],
+  ["banghamcp","mullingerswampcp"],
+  ["penolacp","lakeleake"],
+  ["penolacp","beachportlagoon"],
+  ["lakeleake","beachportlagoon"],
+  ["hackslagoon","boollagoon"]
+];
+
+var BASE = { minPerPx: 0.40, floor: 30, ceiling: 150 };
+
+function clone(o){ return JSON.parse(JSON.stringify(o)); }
+function clamp(v,lo,hi){ return Math.max(lo, Math.min(hi, v)); }
+function esc(s){ return String(s).replace(/[&<>"']/g, function(c){ return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]; }); }
+
+var state = {
+  positions: clone(INITIAL_POSITIONS),
+  edges: INITIAL_EDGES.map(function(e){ return e.slice(); }),
+  scale: 1,
+  mode: "move",
+  selected: null,
+  dragId: null
+};
+
+function dist(a,b){
+  var pa=state.positions[a], pb=state.positions[b];
+  var dx=pa.x-pb.x, dy=pa.y-pb.y;
+  return Math.sqrt(dx*dx+dy*dy);
+}
+function travelTime(a,b){
+  var d = dist(a,b);
+  var floor = Math.round(BASE.floor*state.scale);
+  var ceil = Math.round(BASE.ceiling*state.scale);
+  var raw = Math.round(d*BASE.minPerPx*state.scale);
+  return clamp(raw, floor, ceil);
+}
+function edgeKey(a,b){ return [a,b].sort().join("|"); }
+function hasEdge(a,b){ return state.edges.some(function(e){ return edgeKey(e[0],e[1])===edgeKey(a,b); }); }
+function toggleEdge(a,b){
+  if(a===b) return;
+  var idx = -1;
+  for(var i=0;i<state.edges.length;i++){ if(edgeKey(state.edges[i][0],state.edges[i][1])===edgeKey(a,b)){ idx=i; break; } }
+  if(idx>=0) state.edges.splice(idx,1);
+  else state.edges.push([a,b]);
+}
+function removeEdgeByKey(key){
+  state.edges = state.edges.filter(function(e){ return edgeKey(e[0],e[1])!==key; });
+}
+
+/* ---- map rendering ---- */
+var svg = document.getElementById("mapSvg");
+
+function renderMap(){
+  var parts = [];
+  parts.push('<rect x="0" y="0" width="700" height="440" fill="var(--map-bg)"/>');
+
+  state.edges.forEach(function(e){
+    var a=e[0], b=e[1];
+    var pa=state.positions[a], pb=state.positions[b];
+    var key = edgeKey(a,b);
+    var t = travelTime(a,b);
+    var hot = state.mode==="roads" && state.selected && (a===state.selected||b===state.selected);
+    var stroke = hot ? "var(--map-road-hot)" : "var(--map-road)";
+    var mx=(pa.x+pb.x)/2, my=(pa.y+pb.y)/2;
+    parts.push('<path class="road-hit" data-edge="'+key+'" d="M'+pa.x.toFixed(1)+','+pa.y.toFixed(1)+' L'+pb.x.toFixed(1)+','+pb.y.toFixed(1)+'"/>');
+    parts.push('<path class="road-line" d="M'+pa.x.toFixed(1)+','+pa.y.toFixed(1)+' L'+pb.x.toFixed(1)+','+pb.y.toFixed(1)+'" stroke="'+stroke+'" stroke-width="'+(hot?3:2)+'" opacity="'+(hot?1:0.8)+'"><title>'+esc(SITE_NAMES[a])+' ↔ '+esc(SITE_NAMES[b])+': '+t+' min</title></path>');
+    parts.push('<rect x="'+(mx-15).toFixed(1)+'" y="'+(my-8).toFixed(1)+'" width="30" height="14" rx="5" fill="var(--map-bg)" opacity="0.85"/>');
+    parts.push('<text x="'+mx.toFixed(1)+'" y="'+(my+3).toFixed(1)+'" text-anchor="middle" class="road-label" fill="var(--map-text-muted)">'+t+'m</text>');
+  });
+
+  SITE_ORDER.forEach(function(id){
+    var p = state.positions[id];
+    var isHub = id===HUB_ID;
+    var isCoastal = id===COASTAL_ID;
+    var isSelected = state.selected===id;
+    var r = isHub ? 12 : 9;
+    var fill = isHub ? "var(--map-node-hub)" : (isCoastal ? "var(--map-node-coastal)" : "var(--map-node)");
+    parts.push('<g class="site-node" data-node="'+id+'">');
+    if(isSelected){
+      parts.push('<circle cx="'+p.x.toFixed(1)+'" cy="'+p.y.toFixed(1)+'" r="'+(r+6)+'" class="select-ring"/>');
+    }
+    parts.push('<circle cx="'+p.x.toFixed(1)+'" cy="'+p.y.toFixed(1)+'" r="'+r+'" fill="'+fill+'" stroke="var(--map-text)" stroke-width="'+(isHub?1.5:0.75)+'"/>');
+    parts.push('<text x="'+(p.x+r+6).toFixed(1)+'" y="'+(p.y+4).toFixed(1)+'" class="node-label" fill="var(--map-text)">'+esc(SITE_NAMES[id])+'</text>');
+    parts.push('</g>');
+  });
+
+  svg.innerHTML = parts.join("");
+}
+
+function svgPoint(evt){
+  var pt = svg.createSVGPoint();
+  pt.x = evt.clientX; pt.y = evt.clientY;
+  var ctm = svg.getScreenCTM();
+  if(!ctm) return { x: 350, y: 220 };
+  var loc = pt.matrixTransform(ctm.inverse());
+  return { x: clamp(loc.x, 15, 685), y: clamp(loc.y, 15, 425) };
+}
+
+svg.addEventListener("pointerdown", function(evt){
+  var nodeEl = evt.target.closest ? evt.target.closest("[data-node]") : null;
+  var edgeEl = evt.target.closest ? evt.target.closest("[data-edge]") : null;
+  if(nodeEl){
+    var id = nodeEl.getAttribute("data-node");
+    if(state.mode==="move"){
+      state.dragId = id;
+      try{ svg.setPointerCapture(evt.pointerId); }catch(e){}
+    } else {
+      if(state.selected===null){
+        state.selected = id;
+      } else if(state.selected===id){
+        state.selected = null;
+      } else {
+        toggleEdge(state.selected, id);
+        state.selected = null;
+      }
+      renderAll();
+    }
+    evt.preventDefault();
+    return;
+  }
+  if(edgeEl && state.mode==="roads"){
+    removeEdgeByKey(edgeEl.getAttribute("data-edge"));
+    state.selected = null;
+    renderAll();
+  }
+});
+
+svg.addEventListener("pointermove", function(evt){
+  if(!state.dragId) return;
+  var p = svgPoint(evt);
+  state.positions[state.dragId] = p;
+  renderMap();
+  renderRoadList();
+  updateExports();
+  evt.preventDefault();
+});
+
+function endDrag(evt){
+  if(state.dragId){
+    try{ svg.releasePointerCapture(evt.pointerId); }catch(e){}
+  }
+  state.dragId = null;
+}
+svg.addEventListener("pointerup", endDrag);
+svg.addEventListener("pointercancel", endDrag);
+svg.addEventListener("pointerleave", function(evt){ if(evt.buttons===0) endDrag(evt); });
+
+/* ---- road list ---- */
+function renderRoadList(){
+  var rows = state.edges.slice().sort(function(e1,e2){
+    var n1 = SITE_NAMES[e1[0]]+SITE_NAMES[e1[1]], n2 = SITE_NAMES[e2[0]]+SITE_NAMES[e2[1]];
+    return n1<n2 ? -1 : (n1>n2 ? 1 : 0);
+  }).map(function(e){
+    var t = travelTime(e[0],e[1]);
+    var key = edgeKey(e[0],e[1]);
+    return '<div class="road-row"><span class="road-names">'+esc(SITE_NAMES[e[0]])+' <span class="arrow">&harr;</span> '+esc(SITE_NAMES[e[1]])+'</span><span class="road-time mono">'+t+' min</span><button class="road-remove" data-removekey="'+key+'" title="Remove road" aria-label="Remove road">&times;</button></div>';
+  }).join("");
+  document.getElementById("roadList").innerHTML = rows || '<p class="empty">No roads yet &mdash; add one below.</p>';
+  document.getElementById("roadCountLabel").textContent = "(" + state.edges.length + ")";
+  document.getElementById("statRoads").textContent = state.edges.length;
+  document.querySelectorAll("[data-removekey]").forEach(function(b){
+    b.addEventListener("click", function(){ removeEdgeByKey(b.getAttribute("data-removekey")); renderAll(); });
+  });
+}
+
+/* ---- add-road controls ---- */
+function populateSelects(){
+  var sorted = SITE_ORDER.slice().sort(function(a,b){ return SITE_NAMES[a]<SITE_NAMES[b] ? -1 : 1; });
+  var opts = sorted.map(function(id){ return '<option value="'+id+'">'+esc(SITE_NAMES[id])+'</option>'; }).join("");
+  var fromSel = document.getElementById("fromSelect");
+  var toSel = document.getElementById("toSelect");
+  fromSel.innerHTML = opts;
+  toSel.innerHTML = opts;
+  toSel.selectedIndex = 1;
+}
+document.getElementById("addRoadBtn").addEventListener("click", function(){
+  var a = document.getElementById("fromSelect").value;
+  var b = document.getElementById("toSelect").value;
+  if(!a || !b || a===b) return;
+  if(!hasEdge(a,b)) state.edges.push([a,b]);
+  renderAll();
+});
+
+/* ---- toolbar ---- */
+document.querySelectorAll("[data-mode]").forEach(function(b){
+  b.addEventListener("click", function(){
+    state.mode = b.getAttribute("data-mode");
+    state.selected = null;
+    state.dragId = null;
+    renderAll();
+  });
+});
+document.getElementById("scaleSlider").addEventListener("input", function(e){
+  state.scale = parseInt(e.target.value,10)/100;
+  renderAll();
+});
+document.getElementById("resetBtn").addEventListener("click", function(){
+  state.positions = clone(INITIAL_POSITIONS);
+  state.edges = INITIAL_EDGES.map(function(e){ return e.slice(); });
+  state.scale = 1;
+  state.selected = null;
+  document.getElementById("scaleSlider").value = 100;
+  renderAll();
+});
+
+function updateHint(){
+  var el = document.getElementById("modeHint");
+  if(state.mode==="move"){
+    el.textContent = "Drag any marker to reposition it — every connected road's time updates instantly.";
+  } else if(state.selected){
+    el.textContent = "Click another location to connect or disconnect it from " + SITE_NAMES[state.selected] + ", or click it again to cancel.";
+  } else {
+    el.textContent = "Click a location, then a second one, to add or remove the road between them — or click an existing road to remove it directly.";
+  }
+}
+function updateScaleLabel(){
+  var floor = Math.round(BASE.floor*state.scale), ceil = Math.round(BASE.ceiling*state.scale);
+  document.getElementById("scaleLabel").textContent = state.scale.toFixed(2) + "× — roads run " + floor + "–" + ceil + " min";
+}
+
+/* ---- export ---- */
+function updateExports(){
+  var posLines = SITE_ORDER.map(function(id){
+    var p = state.positions[id];
+    return '  ' + id + ': { x:' + Math.round(p.x) + ', y:' + Math.round(p.y) + ' },';
+  });
+  var posCode = 'var SITE_POSITIONS = {\n' + posLines.join('\n') + '\n};';
+
+  var sortedEdges = state.edges.slice().sort(function(e1,e2){
+    var n1 = SITE_NAMES[e1[0]], n2 = SITE_NAMES[e2[0]];
+    if(n1!==n2) return n1<n2 ? -1 : 1;
+    return SITE_NAMES[e1[1]] < SITE_NAMES[e2[1]] ? -1 : 1;
+  });
+  var roadLines = sortedEdges.map(function(e){
+    var t = travelTime(e[0],e[1]);
+    return '  ["' + e[0] + '","' + e[1] + '",' + t + '],';
+  });
+  var roadCode = 'var MANUAL_ROADS = [\n' + roadLines.join('\n') + '\n];';
+
+  document.getElementById("posExport").value = posCode;
+  document.getElementById("roadsExport").value = roadCode;
+}
+
+document.querySelectorAll("[data-copy]").forEach(function(b){
+  b.addEventListener("click", function(){
+    var ta = document.getElementById(b.getAttribute("data-copy"));
+    var text = ta.value;
+    function flash(){
+      var orig = b.textContent;
+      b.textContent = "Copied!";
+      setTimeout(function(){ b.textContent = orig; }, 1400);
+    }
+    function fallback(){
+      try{ ta.focus(); ta.select(); document.execCommand("copy"); flash(); }catch(e){}
+    }
+    if(navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(text).then(flash, fallback);
+    } else {
+      fallback();
+    }
+  });
+});
+
+/* ---- render orchestration ---- */
+function renderAll(){
+  document.getElementById("app").className = "mode-" + state.mode;
+  document.querySelectorAll("[data-mode]").forEach(function(b){
+    b.classList.toggle("active", b.getAttribute("data-mode")===state.mode);
+  });
+  renderMap();
+  renderRoadList();
+  updateExports();
+  updateHint();
+  updateScaleLabel();
+  saveSnapshot();
+}
+
+/* ---- hot snapshot, so in-progress edits survive a reconnect ---- */
+function saveSnapshot(){
+  try{
+    if(window.claude && window.claude.hot && typeof window.claude.hot.snapshot === "function"){
+      window.claude.hot.snapshot(function(){ return state; });
+    }
+  }catch(e){}
+}
+
+function boot(){
+  var data = null;
+  try{ if(window.claude && window.claude.hot && window.claude.hot.data) data = window.claude.hot.data; }catch(e){}
+  if(data && data.positions && data.edges){
+    state.positions = data.positions;
+    state.edges = data.edges;
+    state.scale = data.scale || 1;
+    document.getElementById("scaleSlider").value = Math.round(state.scale*100);
+  }
+  populateSelects();
+  renderAll();
+  try{
+    if(window.claude && window.claude.hot){
+      if(typeof window.claude.hot.snapshot === "function") window.claude.hot.snapshot(function(){ return state; });
+      if(typeof window.claude.hot.ready === "function") window.claude.hot.ready();
+    }
+  }catch(e){}
+}
+
+boot();
+
+})();
+</script>
+
+</body></html>
