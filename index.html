@@ -292,14 +292,21 @@
   /* The tab row and the credit line stack as one sticky column, so both
      stay on screen together — see renderTabBar() for why the credit line
      is duplicated here rather than shared with the static <footer>. */
-  .tabbar{position:sticky;bottom:0;left:0;right:0;background:var(--paper-2);border-top:1px solid var(--line);display:flex;flex-direction:column;z-index:20;box-shadow:0 -4px 14px -8px rgba(0,0,0,0.35);}
+  .tabbar{position:sticky;bottom:0;left:0;right:0;background:var(--paper-2);border-top:1px solid var(--line);border-radius:14px 14px 0 0;display:flex;flex-direction:column;z-index:20;box-shadow:0 -8px 20px -8px rgba(0,0,0,0.4),0 -1px 0 rgba(255,255,255,0.05) inset;}
   .tabbar-row{display:flex;}
-  .tabbtn{flex:1;background:transparent;border:none;border-radius:0;border-top:2px solid transparent;padding:10px 4px 9px;font-family:'JetBrains Mono',monospace;font-weight:700;font-size:.8rem;color:var(--ink-soft);display:flex;flex-direction:column;align-items:center;gap:3px;transition:background .15s,color .15s;}
+  .tabbtn{flex:1;background:transparent;border:none;border-radius:0;border-top:2px solid transparent;padding:10px 4px 9px;font-family:'JetBrains Mono',monospace;font-weight:700;font-size:.8rem;color:var(--ink-soft);display:flex;flex-direction:column;align-items:center;gap:3px;transition:background .15s,color .15s,border-color .15s;}
+  .tabbtn:first-child{border-radius:14px 0 0 0;}
+  .tabbtn:last-child{border-radius:0 14px 0 0;}
   .tabbtn svg{display:block;}
   .tabbtn:hover:not(:disabled){border-color:transparent;}
-  .tabbtn.active{color:var(--accent);border-top-color:var(--accent);background:var(--accent-soft);}
+  .tabbtn.tab-activity{border-top-color:color-mix(in srgb, var(--accent) 30%, transparent);color:color-mix(in srgb, var(--accent) 40%, var(--ink-soft));}
+  .tabbtn.tab-travel{border-top-color:color-mix(in srgb, var(--accent-2) 30%, transparent);color:color-mix(in srgb, var(--accent-2) 40%, var(--ink-soft));}
+  .tabbtn.tab-checklist{border-top-color:color-mix(in srgb, var(--skill) 30%, transparent);color:color-mix(in srgb, var(--skill) 40%, var(--ink-soft));}
+  .tabbtn.tab-activity.active{color:var(--accent);border-top-color:var(--accent);background:var(--accent-soft);}
+  .tabbtn.tab-travel.active{color:var(--accent-2);border-top-color:var(--accent-2);background:var(--accent-2-soft);}
+  .tabbtn.tab-checklist.active{color:var(--skill);border-top-color:var(--skill);background:var(--skill-soft);}
   .tabbtn .tcount{display:block;font-family:'JetBrains Mono',monospace;font-size:.76rem;font-weight:400;color:var(--ink-soft);margin-top:1px;}
-  .tabbtn.active .tcount{color:var(--accent);}
+  .tabbtn.active .tcount{color:inherit;}
   .tabbar-credit{text-align:center;font-family:'JetBrains Mono',monospace;font-size:.72rem;color:var(--ink-soft);border-top:1px solid var(--line);padding:6px 16px calc(6px + env(safe-area-inset-bottom,0px));}
   .tabbar-credit a{color:var(--ink-soft);}
   .tabpage{padding-bottom:8px;}
@@ -3679,9 +3686,9 @@ function renderTabBar(){
      which has no tab bar to dock under. */
   return '<div class="tabbar">' +
     '<div class="tabbar-row">' +
-      '<button class="tabbtn '+(state.tab==="activity"?"active":"")+'" id="tabActivity">'+tabIcon("activity")+'<span>Activity</span></button>' +
-      '<button class="tabbtn '+(state.tab==="travel"?"active":"")+(pulseTravel?" glow-travel":"")+'" id="tabTravel" '+(state.ambiguous?"disabled":"")+'>'+tabIcon("travel")+'<span>Travel</span></button>' +
-      '<button class="tabbtn '+(state.tab==="checklist"?"active":"")+'" id="tabChecklist" '+(state.ambiguous?"disabled":"")+'>'+tabIcon("checklist")+'<span>Checklist</span><span class="tcount">'+speciesCount+'/'+SPECIES_ROSTER.length+'</span></button>' +
+      '<button class="tabbtn tab-activity '+(state.tab==="activity"?"active":"")+'" id="tabActivity">'+tabIcon("activity")+'<span>Activity</span></button>' +
+      '<button class="tabbtn tab-travel '+(state.tab==="travel"?"active":"")+(pulseTravel?" glow-travel":"")+'" id="tabTravel" '+(state.ambiguous?"disabled":"")+'>'+tabIcon("travel")+'<span>Travel</span></button>' +
+      '<button class="tabbtn tab-checklist '+(state.tab==="checklist"?"active":"")+'" id="tabChecklist" '+(state.ambiguous?"disabled":"")+'>'+tabIcon("checklist")+'<span>Checklist</span><span class="tcount">'+speciesCount+'/'+SPECIES_ROSTER.length+'</span></button>' +
     '</div>' +
     '<div class="tabbar-credit">Created by <a href="https://www.linkedin.com/in/trevorboyle/" target="_blank" rel="noopener noreferrer">Trevor Boyle</a></div>' +
   '</div>';
@@ -4140,6 +4147,7 @@ function renderEnd(){
           return '<div class="lb-row'+medal+(r.you?" you":"")+'"><span class="rank">#'+(i+1)+'</span>'+avatarMarkup(r.name, r.you?"you":(RIVAL_DEFS.filter(function(rd){return rd.name===r.name;})[0]||{}).key)+
             '<span class="name">'+esc(r.name)+(r.you?" (you)":"")+'</span><span class="count">'+r.count+'</span></div>';
         }).join("") + '</div>' +
+        '<div style="text-align:right;margin-top:12px;"><button class="ghost" id="playAgainTop" style="font-size:.78rem;padding:7px 14px;">Play again</button></div>' +
       '</div>' +
       '<div class="card">' +
         '<h2>Best three of the weekend</h2>' +
@@ -4157,6 +4165,7 @@ function renderEnd(){
       '<button class="primary block" id="playAgain">Play again</button>' +
     '</div>';
   document.getElementById("playAgain").addEventListener("click", function(){ state=null; regDraft=null; render(); });
+  document.getElementById("playAgainTop").addEventListener("click", function(){ state=null; regDraft=null; render(); });
   document.getElementById("viewFullChecklist").addEventListener("click", function(){ state.endTab="checklist"; render(); });
 }
 
