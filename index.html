@@ -3540,6 +3540,13 @@ function renderPlay(){
     var textBtn = document.getElementById("btnTextIn");
     if(textBtn) textBtn.addEventListener("click", attemptTextIn);
     attachPanelHandlers();
+    /* Clicking the current-location name in the HUD jumps to the Travel
+       tab, same as the tab button itself — a quiet convenience for anyone
+       who instinctively clicks the place name rather than the tab. No
+       hover/underline styling on purpose: the Travel tab button remains
+       the visible, intended way to get there. */
+    var hudLocationName = document.getElementById("hudLocationName");
+    if(hudLocationName && !state.ambiguous) hudLocationName.addEventListener("click", function(){ state.tab="travel"; render(); });
   }
   if(state.tab==="travel") attachTravelTabHandlers();
   if(state.tab==="checklist"){
@@ -3581,7 +3588,7 @@ function renderActivityTab(){
 
   return '<div class="tabpage sky-'+wIdx+'">' +
     '<div class="hud'+((state.weatherMult||1)<0.95?" wx-poor":"")+'">' +
-      '<div class="hud-left"><span class="clock mono">'+fmtClock(state.clock)+'</span><span class="site"><span class="loc-label">Current Location: </span>'+esc(site.name)+(state.campSiteId===state.currentSite?" (camp)":"")+' <span class="muted mono" style="font-size:.78em">'+siteRc.seen+'/'+siteRc.total+'</span></span></div>' +
+      '<div class="hud-left"><span class="clock mono">'+fmtClock(state.clock)+'</span><span class="site"><span class="loc-label">Current Location: </span><span id="hudLocationName">'+esc(site.name)+(state.campSiteId===state.currentSite?" (camp)":"")+'</span> <span class="muted mono" style="font-size:.78em">'+siteRc.seen+'/'+siteRc.total+'</span></span></div>' +
       '<div class="hud-mid">' +
         '<div class="ebar-track"><div class="ebar-fill" style="width:'+state.energy+'%;background:var(--'+tier.tone+')"></div></div>' +
         '<span class="mono" style="font-size:.8rem">'+Math.round(state.energy)+(state.energyCeiling<100 ? "/"+state.energyCeiling : "")+' &middot; '+tier.name+'</span>' +
