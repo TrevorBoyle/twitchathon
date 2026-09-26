@@ -10,16 +10,16 @@
 <html lang="en"><head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Twitchathon — A Text-Based Birding Watching Game</title>
+<title>Twitchathon — A Text-Based Bird-Watching Game</title>
 <meta name="description" content="Twitchathon is a free browser game: race the clock from Saturday dawn to Sunday 3pm, chase birds across twelve sites, and out-list rival teams to win.">
 <meta name="theme-color" content="#3f6b46">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>%F0%9F%90%A6</text></svg>">
 <meta property="og:type" content="website">
-<meta property="og:title" content="Twitchathon — A Text-Based Birding Watching Game">
+<meta property="og:title" content="Twitchathon — A Text-Based Bird-Watching Game">
 <meta property="og:description" content="Race the clock from Saturday dawn to Sunday 3pm, chase birds across twelve sites, and out-list rival teams to win. Free, no install, plays in any browser.">
 <!-- TODO once hosted: add og:url (final page URL) and og:image (1200x630 social card) here -->
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="Twitchathon — A Text-Based Birding Watching Game">
+<meta name="twitter:title" content="Twitchathon — A Text-Based Bird-Watching Game">
 <meta name="twitter:description" content="Race the clock from Saturday dawn to Sunday 3pm, chase birds across twelve sites, and out-list rival teams to win.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -37,7 +37,7 @@
   "isAccessibleForFree": true
 }
 </script>
-<style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style>
+<style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px);overflow-y:scroll}/* always-on scrollbar gutter: without it, switching to a shorter tab (e.g. Travel) can drop the page below one screen's height and remove the vertical scrollbar, narrowing the viewport by its width — the fixed, centered .tabbar (left:50%+translateX(-50%)) then recenters a few px sideways. Reserving the gutter always keeps that width constant across tabs. */body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style>
 </head><body>
 <style>
 
@@ -289,10 +289,26 @@
   .inlinepanel.ambiguous-panel h3{color:var(--warn);}
 
   /* ---------- Bottom tab bar ---------- */
-  /* The tab row and the credit line stack as one sticky column, so both
-     stay on screen together — see renderTabBar() for why the credit line
-     is duplicated here rather than shared with the static <footer>. */
-  .tabbar{position:sticky;bottom:0;left:0;right:0;background:var(--paper-2);border-top:1px solid var(--line);border-radius:14px 14px 0 0;display:flex;flex-direction:column;z-index:20;box-shadow:0 -8px 20px -8px rgba(0,0,0,0.4),0 -1px 0 rgba(255,255,255,0.05) inset;}
+  /* The tab row and the credit line stack as one column, pinned to the
+     bottom of the screen — see renderTabBar() for why the credit line is
+     duplicated here rather than shared with the static <footer>.
+     Fixed rather than sticky: sticky only reaches the bottom of the
+     viewport once #app's own content is tall enough to push it there, so
+     on a short tab (Travel, or Activity/Checklist early in a game) it sat
+     right after the content with dead space below instead of flush with
+     the screen edge. Fixed pins it to the real viewport bottom regardless
+     of how much content is above it, on both short and long (scrolled)
+     tabs alike, with no dependence on #app's own height. left:50% +
+     translateX(-50%) + width/max-width mirrors #app's own centering
+     (max-width:920px margin:0 auto) so the bar still matches its width on
+     wide screens instead of spanning the full browser window — done via
+     transform rather than auto margins so it doesn't depend on the
+     browser's over-constrained-width resolution for a fixed element. The
+     bottom padding syncScrollPadding() sets on #app (root.style.
+     paddingBottom, sized to this bar's measured height) keeps the last
+     bit of real content from sitting underneath it now that it's out of
+     normal flow. */
+  .tabbar{position:fixed;left:50%;bottom:0;transform:translateX(-50%);width:100%;max-width:920px;background:var(--paper-2);border-top:1px solid var(--line);border-radius:14px 14px 0 0;display:flex;flex-direction:column;z-index:20;box-shadow:0 -8px 20px -8px rgba(0,0,0,0.4),0 -1px 0 rgba(255,255,255,0.05) inset;}
   .tabbar-row{display:flex;}
   .tabbtn{flex:1;background:transparent;border:none;border-radius:0;border-top:2px solid transparent;padding:10px 4px 9px;font-family:'JetBrains Mono',monospace;font-weight:700;font-size:.8rem;color:var(--ink-soft);display:flex;flex-direction:column;align-items:center;gap:3px;transition:background .15s,color .15s,border-color .15s;}
   .tabbtn:first-child{border-radius:14px 0 0 0;}
@@ -312,7 +328,7 @@
   .tabpage{padding-bottom:8px;}
   /* The standalone footer (used on registration/camp/end, which have no
      tab bar) would otherwise also sit at the true end of the play screen,
-     invisible behind the sticky tab bar until scrolled all the way down.
+     invisible behind the fixed tab bar until scrolled all the way down.
      The tab bar carries its own copy while playing, so hide this one then. */
   body.has-tabbar footer.credit{display:none;}
 
@@ -2742,7 +2758,8 @@ function chooseSleep(wakeClock){
   state.confirmedThisVisit = {};
   state.activeEffects = [];
   state.phase = "play";
-  addLog((badNight?"A cold, damp night — ":"") + "Woke after " + fmtDuration(hours*60) + "' sleep in the tent. Sunday begins, camped at " + SITES[state.currentSite].name + ".", "system");
+  var sleepDur = fmtDuration(hours*60);
+  addLog((badNight?"A cold, damp night — ":"") + "Woke after " + sleepDur + (/s$/.test(sleepDur) ? "'" : "'s") + " sleep in the tent. Sunday begins, camped at " + SITES[state.currentSite].name + ".", "system");
   rollWeather();
   render();
 }
@@ -2967,9 +2984,9 @@ function render(){
   if(!state){ renderRegistration(); return; }
   revealedCount = state.log.length;
   /* Only the play screen has the bottom tab bar. Flag it on body so the
-     credit footer can dock sticky underneath it (see .tabbar / footer.credit
+     credit footer can dock inside the fixed bar (see .tabbar / footer.credit
      rules) instead of sitting unreachable at the true end of the page,
-     behind whatever's scrolled. Other phases keep the plain, non-sticky
+     behind whatever's scrolled. Other phases keep the plain, in-flow
      footer at the bottom of their own content. */
   document.body.classList.toggle("has-tabbar", state.phase==="play");
   if(state.phase==="registration") renderRegistration();
@@ -2980,16 +2997,16 @@ function render(){
   saveSnapshot();
 }
 
-/* The HUD and the tab bar are both position:sticky, so they float over
-   whatever's scrolled underneath them without taking up any space as far
-   as the browser's own scroll-into-view math is concerned — it only
-   knows about the raw viewport, not that ~sticky-height pixels of it are
-   covered at the top and bottom. That made focusWatchPanel/
+/* The HUD is position:sticky and the tab bar is position:fixed, so both
+   float over whatever's scrolled underneath them without taking up any
+   space as far as the browser's own scroll-into-view math is concerned —
+   it only knows about the raw viewport, not that ~bar-height pixels of it
+   are covered at the top and bottom. That made focusWatchPanel/
    focusAmbiguousPanel's scrollIntoView calls stop short, leaving the
    panel's bottom edge tucked behind the tab bar. Setting scroll-padding
    to their actual measured heights fixes that everywhere at once —
    scrollIntoView (any block mode), and even plain keyboard/anchor
-   scrolling, all start treating the sticky bars as off-limits. */
+   scrolling, all start treating the two bars as off-limits. */
 function syncScrollPadding(){
   try{
     var hud = document.querySelector(".hud");
@@ -3202,8 +3219,8 @@ function renderRegistration(){
     '<div class="dossier">' +
       '<div class="dossier-head">' +
         '<div class="eyebrow">Friday evening &middot; registration</div>' +
-        '<h1>Twitchathon: A Text-Based Birding Watching Game</h1>' +
-        '<p>A twitchathon is a birding race against the clock: from first light Saturday to 3&nbsp;pm Sunday, the goal is simply to notch up more distinct bird species than all the other teams. There&rsquo;s no specific route you have to follow or birds you have to see, whoever comes back with the longest list wins.</p>' +
+        '<h1>Twitchathon: A Text-Based Bird-Watching Game</h1>' +
+        '<p>A twitchathon is a birding race against the clock: from first light Saturday to 3&nbsp;pm Sunday, the goal is simply to notch up more distinct bird species than all the other teams. There&rsquo;s no specific route you have to follow or birds you have to see; whoever comes back with the longest list wins.</p>' +
         '<p>Name your team and spend your points below. Nothing here costs a minute. The clock starts once you hit the map at first light. Full descriptions of every site are on the Travel tab once you\'re under way.</p>' +
         (bestScore!==null ? '<p class="muted" style="font-size:.85rem">Your personal best: <strong>'+bestScore+' species</strong>. Beat it this run.</p>' : '') +
       '</div>' +
@@ -3218,7 +3235,7 @@ function renderRegistration(){
         '<h2><span class="n">2</span> SHOPPING LIST</h2>' +
         '<div class="shopcard">' +
           '<div class="icon skill">'+shopIcon("skill")+'</div>' +
-          '<div class="body"><strong>Your specialist: '+skillDef.label+'</strong><div class="desc">'+skillDef.desc+'.<br />Ever very team turns up with one specialist, assigned at random and free of charge, each game. Play to their strengths.</div></div>' +
+          '<div class="body"><strong>Your specialist: '+skillDef.label+'</strong><div class="desc">'+skillDef.desc+'.<br />Every team turns up with one specialist, assigned at random and free of charge, each game. Play to their strengths.</div></div>' +
         '</div>' +
         '<div class="shopcard">' +
           '<div class="icon optics">'+shopIcon("optics")+'</div>' +
@@ -3624,7 +3641,7 @@ function renderActivityTab(){
     (alerts ? '<div class="alerts">'+alerts+'</div>' : '') +
     (state.log.length<=1 ? '<div class="onboard-hint">New here? Hit <strong>Go Birding</strong> below to start watching. Each watch has a chance of turning up a species, which you then have to <strong>identify</strong> before it counts. Not sure what a spot has got? Check the <strong>Checklist</strong> tab for who&rsquo;s around, or the <strong>Travel</strong> tab to move on somewhere else. Confirmed species build your list until the deadline. Most species, not most sightings, wins.</div>' : '') +
     '<div class="tray-wrap"><div class="tray">' +
-      '<button id="btnWatch" class="primary'+(state.hasWatchedOnce?"":" glow-cta")+'" '+(state.ambiguous?"disabled":"")+'>'+(site.hide?"Watch":"Go Birding")+'</button>' +
+      '<button id="btnWatch" class="primary'+(state.hasWatchedOnce?"":" glow-cta")+'" '+(state.ambiguous?"disabled":"")+'>Go Birding</button>' +
       '<button id="btnTea" '+(state.ambiguous?"disabled":"")+'>Tea break'+(nextTeaBreakGain()>0 ? " (+"+nextTeaBreakGain()+")" : (state.energyCeiling<100 ? " (capped)" : " (full)"))+'</button>' +
       '<button id="btnSnack" '+(state.snackBars<=0||state.ambiguous?"disabled":"")+'>Snack</button>' +
       (state.day==="Saturday" ? '<button id="btnCamp" class="'+(cutoffLooming()?"glow-cutoff":"")+'" '+((state.ambiguous||minuteOfDay(state.clock)<CONFIG.campEarliestMinuteOfDay)?"disabled":"")+'>Make camp</button>' : '<button class="warn'+(cutoffLooming()?" glow-cutoff":"")+'" id="btnTextIn" '+((state.ambiguous||minuteOfDay(state.clock)<CONFIG.callItAWeekendEarliestMinuteOfDay)?"disabled":"")+'>Call it a weekend</button>') +
@@ -3678,10 +3695,10 @@ function tabIcon(kind){
 function renderTabBar(){
   var speciesCount = distinctConfirmedCount();
   var pulseTravel = travelPulseDue();
-  /* The tab row and the credit line are one sticky unit (see .tabbar in
+  /* The tab row and the credit line are one fixed unit (see .tabbar in
      the stylesheet) so the "Created by" line rides along directly under
      the tabs instead of sitting at the true end of the page, wherever
-     that happens to be, behind the sticky bar. The standalone <footer> in
+     that happens to be, behind the fixed bar. The standalone <footer> in
      the static markup covers every other phase (registration/camp/end),
      which has no tab bar to dock under. */
   return '<div class="tabbar">' +
@@ -3784,7 +3801,7 @@ function renderWatchPanel(){
   var multiLoop = getLoopOptions(site).length > 1;
   var modeNote = site.hide
     ? '<p class="sub">This site has a hide. Sit and watch in steady half-hour stretches. On foot, you walk the loop to cover more ground. Once you set off, you\'re in for the whole thing.</p>'
-    : '<p class="sub">On foot, the only way to work this site. '+(multiLoop ? "Pick a loop" : "The loop here is fixed")+'; once you set off, you\'re in for the whole thing.</p>';
+    : '<p class="sub">On foot is the only way to work this site. '+(multiLoop ? "Pick a loop" : "The loop here is fixed")+'; once you set off, you\'re in for the whole thing.</p>';
   var toggle = site.hide
     ? '<div class="optlist"><div class="grid2"><button id="modeHide" class="'+(mode!=="walk"?"modebtn-active":"")+'">From the hide</button><button id="modeWalk" class="'+(mode==="walk"?"modebtn-active":"")+'">On foot</button></div></div>'
     : '';
@@ -3858,7 +3875,7 @@ function renderTravelTab(){
     '<div class="mapwrap" style="margin:0 16px 14px">'+renderMapSvg(state.positions, state.travel, state.currentSite, state.traveledEdges, siteCounts)+'</div>' +
     zoneBlock +
     '<div style="padding:0 16px;">' +
-      '<p class="sub" style="margin-top:0">Direct roads from here, anywhere else means passing through one of these first:</p>' +
+      '<p class="sub" style="margin-top:0">Direct roads from here; anywhere else means passing through one of these first:</p>' +
       '<div class="optlist">'+travelOpts+'</div>' +
       '<button class="ghost block" id="toggleTravelTable">'+(state.travelTableOpen?"Hide full travel times":"Show full travel times")+'</button>' +
       '<button class="ghost block" id="toggleSiteGuide" style="margin-top:6px">'+(state.siteGuideOpen?"Hide site guide":"Show site guide (what&rsquo;s at each spot)")+'</button>' +
