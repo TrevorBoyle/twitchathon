@@ -156,6 +156,16 @@
     <button id="resetBtn">Reset to original</button>
   </div>
 
+  <details id="importDetails" class="toolbar" style="display:block;">
+    <summary style="cursor:pointer;font-weight:600;font-size:.86rem;color:var(--ink);">Load a different location set&hellip;</summary>
+    <p class="sub" style="margin:10px 0 6px;">This map defaults to the South Australian site set from the game. To build a map for somewhere else, paste the <span class="mono">SITES</span> export from the <a href="location-editor.html" style="color:var(--accent);">location editor</a> tool (or the <span class="mono">SITES</span> block straight out of <span class="mono">index.html</span>) below. Any location whose id already has a spot on the map keeps it; brand-new ones are dropped in a fresh circle for you to drag into place. Roads pointing at a location that's no longer in the set are removed. You can also paste a <span class="mono">SITE_POSITIONS</span> block here on its own (e.g. one you already worked out elsewhere) to move existing markers straight to those coordinates, matched by id, without changing anything else.</p>
+    <textarea id="locationsInput" rows="4" placeholder="Paste a SITES block, a [{&quot;id&quot;:...,&quot;name&quot;:...,&quot;zone&quot;:...,&quot;hub&quot;:...}] list, or a SITE_POSITIONS block"></textarea>
+    <div style="display:flex;gap:10px;align-items:center;margin-top:8px;flex-wrap:wrap;">
+      <button id="loadLocationsBtn" class="copybtn" style="align-self:auto;">Load locations</button>
+      <span class="sub" id="loadLocationsMsg" style="margin:0;"></span>
+    </div>
+  </details>
+
   <p class="hint" id="modeHint"></p>
 
   <div class="mapwrap">
@@ -177,7 +187,7 @@
 
     <section class="panel">
       <h2>Export to the game</h2>
-      <p class="sub">The game already has a slot for these &mdash; a <span class="mono">MANUAL_ROADS</span> override right below <span class="mono">SITE_POSITIONS</span>. Paste both blocks in to replace them.</p>
+      <p class="sub">The game already has a slot for these &mdash; a <span class="mono">MANUAL_ROADS</span> override right below <span class="mono">SITE_POSITIONS</span>. Paste both blocks in to replace them. (If you loaded a different location set above, paste its <span class="mono">SITES</span> export in too &mdash; see the location editor tool.)</p>
       <label class="fieldlabel">SITE_POSITIONS</label>
       <textarea id="posExport" readonly rows="5"></textarea>
       <button class="copybtn" data-copy="posExport">Copy positions</button>
@@ -194,59 +204,79 @@
 (function(){
 "use strict";
 
-var SITE_ORDER = ["bordertownwetlands","mountmonster","banghamcp","padthawaycp","mcinwheel","penolacp","lakeleake","beachportlagoon","naracoortecaves","hackslagoon","boollagoon","mullingerswampcp"];
-var SITE_NAMES = {
-  bordertownwetlands:"Bordertown Wetlands and Sewage Ponds",
-  mountmonster:"Mount Monster Conservation Park",
-  banghamcp:"Bangham Conservation Park",
-  padthawaycp:"Padthaway Conservation Park",
-  mcinwheel:"Lake McInwheel",
-  penolacp:"Penola Conservation Park",
-  lakeleake:"Lake Leake",
-  beachportlagoon:"Beachport Lagoon",
-  naracoortecaves:"Naracoorte Caves National Park",
-  hackslagoon:"Hacks Lagoon Conservation Reserve",
-  boollagoon:"Bool Lagoon Game Reserve",
-  mullingerswampcp:"Mullinger Swamp Conservation Park"
-};
-var HUB_ID = "bordertownwetlands";
-var COASTAL_ID = "beachportlagoon";
-
-var INITIAL_POSITIONS = {
-  bordertownwetlands:{ x:360, y:210 },
-  mountmonster:     { x:300, y:130 },
-  banghamcp:        { x:560, y:80  },
-  padthawaycp:      { x:430, y:70  },
-  mcinwheel:        { x:230, y:300 },
-  penolacp:         { x:190, y:400 },
-  lakeleake:        { x:90,  y:340 },
-  beachportlagoon:  { x:60,  y:410 },
-  naracoortecaves:  { x:560, y:300 },
-  hackslagoon:      { x:480, y:380 },
-  boollagoon:       { x:620, y:400 },
-  mullingerswampcp: { x:640, y:250 }
-};
-
-var INITIAL_EDGES = [
-  ["mountmonster","mcinwheel"],
-  ["mountmonster","bordertownwetlands"],
-  ["mountmonster","padthawaycp"],
-  ["mcinwheel","bordertownwetlands"],
-  ["mcinwheel","penolacp"],
-  ["mcinwheel","lakeleake"],
-  ["naracoortecaves","bordertownwetlands"],
-  ["naracoortecaves","hackslagoon"],
-  ["naracoortecaves","boollagoon"],
-  ["naracoortecaves","mullingerswampcp"],
-  ["bordertownwetlands","padthawaycp"],
-  ["bordertownwetlands","hackslagoon"],
-  ["banghamcp","padthawaycp"],
-  ["banghamcp","mullingerswampcp"],
-  ["penolacp","lakeleake"],
-  ["penolacp","beachportlagoon"],
-  ["lakeleake","beachportlagoon"],
-  ["hackslagoon","boollagoon"]
+/* The site list is data, not a fixed constant: it defaults to the game's
+   current South Australian locations, but "Load a different location set"
+   below can swap in any list of {id,name,zone,hub} — e.g. the export from
+   the location editor tool for a Victoria or England hotspot set. SITE_ORDER,
+   SITE_NAMES, ZONE_BY_ID and HUB_ID are reassigned by loadSiteSet() rather
+   than being hardcoded constants, so the rest of the editor (which only
+   ever iterates SITE_ORDER / looks names up in SITE_NAMES) doesn't care
+   which set is currently loaded. */
+var DEFAULT_SITES = [
+  { id:"bordertownwetlands", name:"Bordertown Wetlands and Sewage Ponds", zone:"inland",  hub:true  },
+  { id:"mountmonster",       name:"Mount Monster Conservation Park",      zone:"inland",  hub:false },
+  { id:"banghamcp",          name:"Bangham Conservation Park",            zone:"inland",  hub:false },
+  { id:"padthawaycp",        name:"Padthaway Conservation Park",          zone:"inland",  hub:false },
+  { id:"mcinwheel",          name:"Lake McIntyre",                        zone:"inland",  hub:false },
+  { id:"penolacp",           name:"Penola Conservation Park",             zone:"inland",  hub:false },
+  { id:"lakeleake",          name:"Lake Leake",                           zone:"inland",  hub:false },
+  { id:"beachportlagoon",    name:"Beachport Lagoon",                     zone:"coastal", hub:false },
+  { id:"naracoortecaves",    name:"Naracoorte Caves National Park",       zone:"inland",  hub:false },
+  { id:"hackslagoon",        name:"Hacks Lagoon Conservation Reserve",    zone:"inland",  hub:false },
+  { id:"boollagoon",         name:"Bool Lagoon Game Reserve",             zone:"inland",  hub:false },
+  { id:"mullingerswampcp",   name:"Mullinger Swamp Conservation Park",    zone:"inland",  hub:false }
 ];
+
+/* Snapshotted straight from the game's current SITE_POSITIONS / MANUAL_ROADS
+   (index.html) — this is the "Reset to original" baseline for as long as
+   the default South Australian set is the one loaded. Road minutes aren't
+   carried over: this editor always recomputes travel time live from marker
+   distance and pace, so only the (a,b) pairs matter here. */
+var DEFAULT_POSITIONS = {
+  bordertownwetlands: { x:287, y:211 },
+  mountmonster:       { x:51,  y:44  },
+  banghamcp:          { x:260, y:301 },
+  padthawaycp:        { x:335, y:78  },
+  mcinwheel:          { x:193, y:149 },
+  penolacp:           { x:197, y:378 },
+  lakeleake:          { x:70,  y:271 },
+  beachportlagoon:    { x:40,  y:422 },
+  naracoortecaves:    { x:389, y:179 },
+  hackslagoon:        { x:559, y:45  },
+  boollagoon:         { x:525, y:412 },
+  mullingerswampcp:   { x:482, y:291 }
+};
+
+var DEFAULT_EDGES = [
+  ["boollagoon","mullingerswampcp"],
+  ["bordertownwetlands","banghamcp"],
+  ["bordertownwetlands","mcinwheel"],
+  ["bordertownwetlands","mullingerswampcp"],
+  ["bordertownwetlands","naracoortecaves"],
+  ["hackslagoon","mullingerswampcp"],
+  ["hackslagoon","padthawaycp"],
+  ["lakeleake","beachportlagoon"],
+  ["lakeleake","mcinwheel"],
+  ["mcinwheel","mountmonster"],
+  ["naracoortecaves","hackslagoon"],
+  ["padthawaycp","mcinwheel"],
+  ["padthawaycp","mountmonster"],
+  ["padthawaycp","naracoortecaves"],
+  ["penolacp","banghamcp"],
+  ["penolacp","beachportlagoon"],
+  ["penolacp","boollagoon"],
+  ["penolacp","lakeleake"]
+];
+
+var SITE_ORDER, SITE_NAMES, ZONE_BY_ID, HUB_ID;
+function loadSiteSet(sites){
+  SITE_ORDER = sites.map(function(s){ return s.id; });
+  SITE_NAMES = {}; ZONE_BY_ID = {};
+  sites.forEach(function(s){ SITE_NAMES[s.id] = s.name; ZONE_BY_ID[s.id] = s.zone==="coastal" ? "coastal" : "inland"; });
+  var hubSite = sites.filter(function(s){ return s.hub; })[0];
+  HUB_ID = hubSite ? hubSite.id : null;
+}
+loadSiteSet(DEFAULT_SITES);
 
 var BASE = { minPerPx: 0.40, floor: 30, ceiling: 150 };
 
@@ -254,9 +284,144 @@ function clone(o){ return JSON.parse(JSON.stringify(o)); }
 function clamp(v,lo,hi){ return Math.max(lo, Math.min(hi, v)); }
 function esc(s){ return String(s).replace(/[&<>"']/g, function(c){ return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]; }); }
 
+/* ---- parsing a pasted location set (see the "Load a different location
+   set" panel) ---- */
+function normalizeLocationEntry(e){
+  if(!e || !e.id) throw new Error("Every location needs an id.");
+  return { id:String(e.id), name:String(e.name || e.id), zone: e.zone==="coastal" ? "coastal" : "inland", hub: !!e.hub };
+}
+/* Finds a balanced {...} block, starting the search at (or after) the given
+   regex anchor, skipping over strings and comments so nested braces inside
+   a blurb, or a /* comment *\/, don't throw off the brace count. Used to
+   pull just the SITES object literal out of a much bigger paste (the whole
+   index.html, say) without needing SITES to be the only thing on the page. */
+function findObjectLiteral(text, anchorRe){
+  var m = anchorRe.exec(text);
+  if(!m) return null;
+  var start = text.indexOf("{", m.index);
+  if(start<0) return null;
+  var depth=0, inStr=null, inLineComment=false, inBlockComment=false;
+  for(var i=start; i<text.length; i++){
+    var c = text[i], prev = i>0 ? text[i-1] : "";
+    if(inLineComment){ if(c==="\n") inLineComment=false; continue; }
+    if(inBlockComment){ if(c==="/" && prev==="*") inBlockComment=false; continue; }
+    if(inStr){ if(c===inStr && prev!=="\\") inStr=null; continue; }
+    if(c==="/" && text[i+1]==="/"){ inLineComment=true; continue; }
+    if(c==="/" && text[i+1]==="*"){ inBlockComment=true; continue; }
+    if(c==='"' || c==="'" || c==="`"){ inStr=c; continue; }
+    if(c==="{"){ depth++; }
+    else if(c==="}"){ depth--; if(depth===0) return text.slice(start, i+1); }
+  }
+  return null;
+}
+function parseLocationInput(text){
+  text = (text||"").trim();
+  if(!text) throw new Error("Paste a locations export first.");
+  try{
+    var asJson = JSON.parse(text);
+    if(Array.isArray(asJson) && asJson.length) return asJson.map(normalizeLocationEntry);
+  }catch(e){ /* not plain JSON — fall through to the SITES-block parser */ }
+  var objText = findObjectLiteral(text, /\bSITES\s*=/) || findObjectLiteral(text, /^/);
+  var obj;
+  try{
+    obj = (new Function("sp", "return (" + objText + ");"))(function(){ return {}; });
+  }catch(e){
+    throw new Error("Couldn't read that as JSON or as a SITES block. Paste the export from the location editor, or the SITES block from index.html.");
+  }
+  if(!obj || typeof obj!=="object" || !Object.keys(obj).length) throw new Error("No locations found in that text.");
+  return Object.keys(obj).map(function(key){
+    var s = obj[key] || {};
+    var id = s.id || key;
+    return normalizeLocationEntry({ id:id, name: s.name || id, zone: s.zone, hub: !!s.hub });
+  });
+}
+
+/* Applies a freshly parsed location set: ids already positioned on the map
+   keep their spot and any roads they're part of; brand-new ids are dropped
+   in a circle for the user to drag into place; roads pointing at an id
+   that's no longer around are dropped. */
+function applyImportedSites(sites){
+  var oldPositions = state.positions;
+  loadSiteSet(sites);
+  var kept = SITE_ORDER.filter(function(id){ return oldPositions[id]; });
+  var fresh = SITE_ORDER.filter(function(id){ return !oldPositions[id]; });
+  var positions = circlePositions(fresh);
+  kept.forEach(function(id){ positions[id] = oldPositions[id]; });
+  state.positions = positions;
+  state.edges = state.edges.filter(function(e){ return positions[e[0]] && positions[e[1]]; });
+  state.selected = null;
+  state.usingDefaultSet = false;
+  state.siteSet = sites;
+  populateSelects();
+  renderAll();
+}
+
+/* Detects a pasted SITE_POSITIONS block (as opposed to a SITES/locations
+   block): either the text literally declares SITE_POSITIONS, or every
+   top-level value parses as a bare {x,y} pair with none of the fields a
+   location/species entry would have. */
+function looksLikePositionsBlock(text){
+  text = (text||"").trim();
+  if(!text) return false;
+  if(/\bSITE_POSITIONS\s*=/.test(text)) return true;
+  var objText = findObjectLiteral(text, /^/);
+  if(!objText) return false;
+  var obj;
+  try{ obj = (new Function("return (" + objText + ");"))(); }catch(e){ return false; }
+  var keys = Object.keys(obj||{});
+  if(!keys.length) return false;
+  return keys.every(function(k){
+    var v = obj[k];
+    return v && typeof v==="object" && typeof v.x==="number" && typeof v.y==="number" &&
+      !("id" in v) && !("name" in v) && !("species" in v) && !("zone" in v);
+  });
+}
+
+/* Applies a pasted SITE_POSITIONS block directly to the markers already on
+   the map, matching by id — it doesn't add, rename, or remove any location,
+   it only moves the ones that already exist. Ids in the pasted block that
+   don't match a currently-loaded location are skipped and reported. */
+function applyImportedPositions(text){
+  var objText = findObjectLiteral(text, /\bSITE_POSITIONS\s*=/) || findObjectLiteral(text, /^/);
+  if(!objText) throw new Error("Couldn't find a SITE_POSITIONS object in that text.");
+  var obj;
+  try{ obj = (new Function("return (" + objText + ");"))(); }
+  catch(e){ throw new Error("Couldn't read that as a SITE_POSITIONS block."); }
+  if(!obj || typeof obj!=="object" || !Object.keys(obj).length) throw new Error("No positions found in that text.");
+  var matched = [], unmatched = [];
+  Object.keys(obj).forEach(function(id){
+    var p = obj[id];
+    if(!p || typeof p.x!=="number" || typeof p.y!=="number") return;
+    if(SITE_NAMES.hasOwnProperty(id)){
+      state.positions[id] = { x:p.x, y:p.y };
+      matched.push(id);
+    } else {
+      unmatched.push(id);
+    }
+  });
+  if(!matched.length){
+    throw new Error("None of those ids match a location currently on the map" +
+      (unmatched.length ? " (got: " + unmatched.slice(0,6).join(", ") + (unmatched.length>6?", …":"") + ")" : "") +
+      ". Load that location set above first, then paste the positions.");
+  }
+  renderAll();
+  var message = "Placed " + matched.length + " location" + (matched.length===1?"":"s") + " at their pasted coordinates.";
+  if(unmatched.length){
+    message += " " + unmatched.length + " id" + (unmatched.length===1?"":"s") + " didn't match a loaded location and " +
+      (unmatched.length===1?"was":"were") + " skipped (" + unmatched.join(", ") + ").";
+  }
+  return message;
+}
+
+function currentSiteSetArray(){
+  return SITE_ORDER.map(function(id){ return { id:id, name:SITE_NAMES[id], zone:ZONE_BY_ID[id], hub:id===HUB_ID }; });
+}
+
 var state = {
-  positions: clone(INITIAL_POSITIONS),
-  edges: INITIAL_EDGES.map(function(e){ return e.slice(); }),
+  usingDefaultSet: true,
+  siteSet: currentSiteSetArray(),
+  positions: clone(DEFAULT_POSITIONS),
+  edges: DEFAULT_EDGES.map(function(e){ return e.slice(); }),
   scale: 1,
   mode: "move",
   selected: null,
@@ -312,7 +477,7 @@ function renderMap(){
   SITE_ORDER.forEach(function(id){
     var p = state.positions[id];
     var isHub = id===HUB_ID;
-    var isCoastal = id===COASTAL_ID;
+    var isCoastal = ZONE_BY_ID[id]==="coastal";
     var isSelected = state.selected===id;
     var r = isHub ? 12 : 9;
     var fill = isHub ? "var(--map-node-hub)" : (isCoastal ? "var(--map-node-coastal)" : "var(--map-node)");
@@ -435,13 +600,46 @@ document.getElementById("scaleSlider").addEventListener("input", function(e){
   state.scale = parseInt(e.target.value,10)/100;
   renderAll();
 });
+function circlePositions(ids){
+  var positions = {}, cx=350, cy=220, r = ids.length>1 ? 170 : 0;
+  ids.forEach(function(id, i){
+    var angle = (i/ids.length)*Math.PI*2 - Math.PI/2;
+    positions[id] = ids.length===1 ? { x:cx, y:cy } : { x: clamp(cx+r*Math.cos(angle),15,685), y: clamp(cy+r*Math.sin(angle),15,425) };
+  });
+  return positions;
+}
 document.getElementById("resetBtn").addEventListener("click", function(){
-  state.positions = clone(INITIAL_POSITIONS);
-  state.edges = INITIAL_EDGES.map(function(e){ return e.slice(); });
+  if(state.usingDefaultSet){
+    state.positions = clone(DEFAULT_POSITIONS);
+    state.edges = DEFAULT_EDGES.map(function(e){ return e.slice(); });
+  } else {
+    /* A non-default location set has no baked-in layout to fall back to —
+       "reset" just means a fresh circle and no roads, same as first load. */
+    state.positions = circlePositions(SITE_ORDER);
+    state.edges = [];
+  }
   state.scale = 1;
   state.selected = null;
   document.getElementById("scaleSlider").value = 100;
   renderAll();
+});
+document.getElementById("loadLocationsBtn").addEventListener("click", function(){
+  var msg = document.getElementById("loadLocationsMsg");
+  var text = document.getElementById("locationsInput").value;
+  try{
+    if(looksLikePositionsBlock(text)){
+      msg.style.color = "var(--accent)";
+      msg.textContent = applyImportedPositions(text);
+    } else {
+      var sites = parseLocationInput(text);
+      applyImportedSites(sites);
+      msg.style.color = "var(--accent)";
+      msg.textContent = "Loaded " + sites.length + " location" + (sites.length===1?"":"s") + (HUB_ID ? "." : " — none is flagged as the hub/camp site, so the map will have no highlighted hub marker until one is.");
+    }
+  }catch(err){
+    msg.style.color = "var(--danger)";
+    msg.textContent = err.message;
+  }
 });
 
 function updateHint(){
@@ -508,6 +706,7 @@ function renderAll(){
   document.querySelectorAll("[data-mode]").forEach(function(b){
     b.classList.toggle("active", b.getAttribute("data-mode")===state.mode);
   });
+  document.getElementById("statSites").textContent = SITE_ORDER.length;
   renderMap();
   renderRoadList();
   updateExports();
@@ -528,6 +727,11 @@ function saveSnapshot(){
 function boot(){
   var data = null;
   try{ if(window.claude && window.claude.hot && window.claude.hot.data) data = window.claude.hot.data; }catch(e){}
+  if(data && data.siteSet && data.siteSet.length){
+    loadSiteSet(data.siteSet);
+    state.siteSet = data.siteSet;
+    state.usingDefaultSet = !!data.usingDefaultSet;
+  }
   if(data && data.positions && data.edges){
     state.positions = data.positions;
     state.edges = data.edges;

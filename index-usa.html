@@ -1,26 +1,33 @@
 <!doctype html>
 <!--
-  Twitchathon
+  Twitchathon — USA edition
   Copyright (c) 2026 Trevor Boyle
   Licensed under MIT + Commons Clause — see LICENSE in the project root.
   Commons Clause restricts the right to sell this software or a service
   substantially derived from it. Non-commercial use, forking, and
   modification are permitted.
+
+  This is a regional copy of index.html. It ships with the same placeholder
+  South Australian SITES / SITE_POSITIONS / MANUAL_ROADS as the original —
+  replace them with a USA hotspot set using tools/location-editor.html
+  (build the locations and species) and tools/map-editor.html (lay them out
+  and wire up roads), same as described in the README's "Swapping in a
+  different region" section.
 -->
 <html lang="en"><head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Twitchathon — A Text-Based Bird-Watching Game</title>
-<meta name="description" content="Twitchathon is a free browser game: race the clock from Saturday dawn to Sunday 3pm, chase birds across twelve sites, and out-list rival teams to win.">
+<title>Twitchathon: USA Edition — A Text-Based Bird-Watching Game</title>
+<meta name="description" content="Twitchathon: USA Edition is a free browser game: race the clock from Saturday dawn to Sunday 3pm, chase birds across a US map, and out-list rival teams to win.">
 <meta name="theme-color" content="#3f6b46">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>%F0%9F%90%A6</text></svg>">
 <meta property="og:type" content="website">
-<meta property="og:title" content="Twitchathon — A Text-Based Bird-Watching Game">
-<meta property="og:description" content="Race the clock from Saturday dawn to Sunday 3pm, chase birds across twelve sites, and out-list rival teams to win. Free, no install, plays in any browser.">
+<meta property="og:title" content="Twitchathon: USA Edition — A Text-Based Bird-Watching Game">
+<meta property="og:description" content="Race the clock from Saturday dawn to Sunday 3pm, chase birds across a US map, and out-list rival teams to win. Free, no install, plays in any browser.">
 <!-- TODO once hosted: add og:url (final page URL) and og:image (1200x630 social card) here -->
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="Twitchathon — A Text-Based Bird-Watching Game">
-<meta name="twitter:description" content="Race the clock from Saturday dawn to Sunday 3pm, chase birds across twelve sites, and out-list rival teams to win.">
+<meta name="twitter:title" content="Twitchathon: USA Edition — A Text-Based Bird-Watching Game">
+<meta name="twitter:description" content="Race the clock from Saturday dawn to Sunday 3pm, chase birds across a US map, and out-list rival teams to win.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,400;0,500;0,700;0,800;1,400;1,500;1,600&display=swap">
@@ -28,8 +35,8 @@
 {
   "@context": "https://schema.org",
   "@type": "VideoGame",
-  "name": "Twitchathon",
-  "description": "A free, text-based birding race played in the browser: race the clock from Saturday dawn to Sunday 3pm, chase birds across twelve sites, and out-list rival teams to win.",
+  "name": "Twitchathon: USA Edition",
+  "description": "A free, text-based birding race played in the browser: race the clock from Saturday dawn to Sunday 3pm, chase birds across a US map, and out-list rival teams to win.",
   "genre": ["Simulation", "Strategy"],
   "gamePlatform": "Web Browser",
   "applicationCategory": "Game",
@@ -700,6 +707,13 @@ var SKILL_DEFS = [
 ];
 
 /* ============================== DATA ============================== */
+/* USA EDITION — PLACEHOLDER DATA: SITES below (plus SITE_POSITIONS and
+   MANUAL_ROADS further down, and the currentSite-derived hub) still hold
+   the original South Australian site set. Replace them with a USA hotspot
+   set using tools/location-editor.html (build the locations + species,
+   export the SITES block) and tools/map-editor.html (lay them out, wire up
+   roads, export SITE_POSITIONS + MANUAL_ROADS) — see the README's
+   "Swapping in a different region" section. */
 function sp(id,name,tier,group,idDiff,audio){ return {id:id,name:name,tier:tier,group:group,idDiff:idDiff,audio:!!audio}; }
 
 var SITES = {
@@ -2255,7 +2269,7 @@ function maybeTriggerEvent(context){
       var cfDur = 480;
       state.activeEffects.push({ type:"coldFront", siteId: siteId, expiresAtClock: state.clock+cfDur, label:"Fallout: "+SITES[siteId].name });
       state.forcedBadNight = true;
-      addLog("A cold front's rolled in off the Bight — migrants pushed toward " + SITES[siteId].name + ", water-bird detection there is up 150% for the next " + fmtDuration(cfDur) + ". Tonight's camp will be colder for it.", "event");
+      addLog("A cold front's rolled in — migrants pushed toward " + SITES[siteId].name + ", water-bird detection there is up 150% for the next " + fmtDuration(cfDur) + ". Tonight's camp will be colder for it.", "event");
       break;
     }
     case "roadworks": {
@@ -3228,7 +3242,7 @@ function renderRegistration(){
     '<div class="dossier">' +
       '<div class="dossier-head">' +
         '<div class="eyebrow">Friday evening &middot; registration</div>' +
-        '<h1>Twitchathon: A Text-Based Bird-Watching Game</h1>' +
+        '<h1>Twitchathon: USA Edition</h1>' +
         '<p>A twitchathon is a birding race against the clock: from first light Saturday to 3&nbsp;pm Sunday, the goal is simply to notch up more distinct bird species than all the other teams. There&rsquo;s no specific route you have to follow or birds you have to see; whoever comes back with the longest list wins.</p>' +
         '<p>Name your team and spend your points below. Nothing here costs a minute. The clock starts once you hit the map at first light. Full descriptions of every site are on the Travel tab once you\'re under way.</p>' +
         (bestScore!==null ? '<p class="muted" style="font-size:.85rem">Your personal best: <strong>'+bestScore+' species</strong>. Beat it this run.</p>' : '') +

@@ -1,0 +1,1017 @@
+<!doctype html>
+<!--
+  Twitchathon Location Editor
+  Copyright (c) 2026 Trevor Boyle
+  Licensed under MIT + Commons Clause — see LICENSE in the project root.
+  Commons Clause restricts the right to sell this software or a service
+  substantially derived from it. Non-commercial use, forking, and
+  modification are permitted.
+-->
+<html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Twitchathon Location Editor</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Newsreader:ital,wght@0,500;0,600;1,500&family=Archivo:wght@500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap');
+
+  :root{
+    --paper:#f5efdc;
+    --paper-2:#ece2c2;
+    --card:#fffcf3;
+    --ink:#2b2417;
+    --ink-soft:#6d6146;
+    --line:#d8c99a;
+    --accent:#3f6b46;
+    --accent-soft:#e2ecdf;
+    --accent-2:#b8622c;
+    --accent-2-soft:#f3e1cd;
+    --danger:#a5402f;
+    --danger-soft:#f3ded9;
+    --shadow-card:0 1px 2px rgba(43,36,23,0.07), 0 6px 18px -10px rgba(43,36,23,0.22);
+    --map-bg:#141d17;
+    --map-text:#eef1e6;
+    --map-text-muted:#9aa398;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --paper:#171510;
+      --paper-2:#1e1b14;
+      --card:#211e17;
+      --ink:#ece5d2;
+      --ink-soft:#a89e83;
+      --line:#3a3527;
+      --accent:#7fbf8c;
+      --accent-soft:#213026;
+      --accent-2:#e2a35e;
+      --accent-2-soft:#332619;
+      --danger:#e08670;
+      --danger-soft:#3a2420;
+      --shadow-card:0 1px 2px rgba(0,0,0,0.3), 0 8px 20px -8px rgba(0,0,0,0.5);
+    }
+  }
+  :root[data-theme="dark"]{
+    --paper:#171510;
+    --paper-2:#1e1b14;
+    --card:#211e17;
+    --ink:#ece5d2;
+    --ink-soft:#a89e83;
+    --line:#3a3527;
+    --accent:#7fbf8c;
+    --accent-soft:#213026;
+    --accent-2:#e2a35e;
+    --accent-2-soft:#332619;
+    --danger:#e08670;
+    --danger-soft:#3a2420;
+    --shadow-card:0 1px 2px rgba(0,0,0,0.3), 0 8px 20px -8px rgba(0,0,0,0.5);
+  }
+
+  *{box-sizing:border-box;}
+  html,body{height:100%;}
+  body{margin:0;background:var(--paper);color:var(--ink);font-family:'Archivo',sans-serif;}
+  h1,h2,h3{font-family:'Newsreader',Georgia,serif;color:var(--ink);text-wrap:balance;margin:0;}
+  .mono{font-family:'JetBrains Mono',monospace;font-variant-numeric:tabular-nums;}
+  #app{max-width:1080px;margin:0 auto;padding:24px 16px 48px;display:flex;flex-direction:column;gap:18px;}
+
+  header .eyebrow{font-family:'JetBrains Mono',monospace;font-size:.68rem;letter-spacing:.14em;text-transform:uppercase;color:var(--accent);margin-bottom:6px;}
+  header h1{font-size:1.7rem;font-weight:600;letter-spacing:-.01em;}
+  header p{color:var(--ink-soft);font-size:.92rem;margin-top:8px;max-width:68ch;line-height:1.5;}
+  header .stats{display:flex;gap:14px;margin-top:10px;font-family:'JetBrains Mono',monospace;font-size:.72rem;color:var(--ink-soft);flex-wrap:wrap;}
+  header .stats b{color:var(--ink);}
+
+  .toolbar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px 16px;box-shadow:var(--shadow-card);}
+  button{font-family:'Archivo',sans-serif;font-weight:600;font-size:.8rem;border:1px solid var(--line);background:var(--paper);color:var(--ink);border-radius:20px;padding:8px 14px;cursor:pointer;transition:background .12s,color .12s,border-color .12s;}
+  button.primary{background:var(--accent);border-color:var(--accent);color:var(--paper);}
+  button.primary:hover{opacity:.9;}
+  button.danger:hover{border-color:var(--danger);color:var(--danger);}
+  button:hover{border-color:var(--accent);}
+  button:disabled{opacity:.45;cursor:default;}
+  button:disabled:hover{border-color:var(--line);color:var(--ink);}
+
+  .hint{font-size:.82rem;color:var(--ink-soft);font-style:italic;font-family:'Newsreader',serif;margin:0;padding:0 2px;}
+
+  details.panel-details{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px 16px;box-shadow:var(--shadow-card);}
+  details.panel-details summary{cursor:pointer;font-weight:600;font-size:.86rem;color:var(--ink);}
+  details.panel-details .sub{margin:10px 0 6px;}
+  a{color:var(--accent);}
+
+  .warnbox{border:1px solid var(--danger);background:var(--danger-soft);border-radius:12px;padding:10px 14px;font-size:.8rem;color:var(--ink);}
+  .warnbox.ok{border-color:var(--accent);background:var(--accent-soft);}
+  .warnbox ul{margin:6px 0 0;padding-left:18px;}
+  .warnbox li{margin:2px 0;}
+
+  .layout{display:grid;grid-template-columns:280px 1fr;gap:16px;align-items:start;}
+  @media (max-width:820px){ .layout{grid-template-columns:1fr;} }
+
+  .panel{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;box-shadow:var(--shadow-card);display:flex;flex-direction:column;gap:10px;min-width:0;}
+  .panel h2{font-size:1.02rem;font-weight:600;display:flex;align-items:baseline;gap:6px;}
+  .panel h2 .count{font-family:'JetBrains Mono',monospace;font-size:.68rem;color:var(--ink-soft);font-weight:400;}
+  .panel .sub{font-size:.78rem;color:var(--ink-soft);margin:-4px 0 2px;line-height:1.4;}
+
+  .loclist{display:flex;flex-direction:column;gap:6px;max-height:640px;overflow-y:auto;}
+  .locrow{display:flex;align-items:center;gap:8px;border:1px solid var(--line);border-radius:10px;padding:8px 10px;cursor:pointer;background:var(--paper);}
+  .locrow:hover{border-color:var(--accent);}
+  .locrow.active{border-color:var(--accent);background:var(--accent-soft);}
+  .locrow .name{flex:1;min-width:0;font-size:.84rem;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .locrow .badges{display:flex;gap:3px;flex:none;}
+  .locrow .badge{font-family:'JetBrains Mono',monospace;font-size:.6rem;padding:2px 5px;border-radius:5px;background:var(--paper-2);color:var(--ink-soft);}
+  .locrow .badge.hub{background:var(--accent-2-soft);color:var(--accent-2);}
+  .locrow .count-sp{font-family:'JetBrains Mono',monospace;font-size:.68rem;color:var(--ink-soft);flex:none;}
+
+  label.fieldlabel{font-family:'JetBrains Mono',monospace;font-size:.62rem;text-transform:uppercase;letter-spacing:.05em;color:var(--ink-soft);margin-top:2px;display:block;}
+  .field{display:flex;flex-direction:column;gap:3px;}
+  .fieldrow{display:flex;flex-wrap:wrap;gap:12px;}
+  .fieldrow .field{flex:1;min-width:140px;}
+  input[type=text], input[type=number], select, textarea{width:100%;font-family:'Archivo',sans-serif;font-size:.84rem;background:var(--paper);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:7px 9px;}
+  input[type=text].mono, input[type=number].mono{font-family:'JetBrains Mono',monospace;font-size:.78rem;}
+  textarea{font-family:'Newsreader',serif;font-size:.9rem;line-height:1.4;resize:vertical;min-height:56px;}
+  .checkline{display:flex;align-items:center;gap:6px;font-size:.82rem;}
+  .checkline input{width:auto;}
+  .checks{display:flex;flex-wrap:wrap;gap:12px 16px;margin-top:2px;}
+  .loopchecks{display:flex;flex-wrap:wrap;gap:8px 14px;}
+  .loopchecks label{display:flex;align-items:center;gap:5px;font-size:.78rem;background:var(--paper);border:1px solid var(--line);border-radius:16px;padding:5px 10px;}
+
+  table.sptable{width:100%;border-collapse:collapse;font-size:.78rem;}
+  table.sptable th{text-align:left;font-family:'JetBrains Mono',monospace;font-size:.62rem;text-transform:uppercase;letter-spacing:.04em;color:var(--ink-soft);padding:4px 6px;border-bottom:1px solid var(--line);}
+  table.sptable td{padding:4px 6px;border-bottom:1px solid var(--line);vertical-align:middle;}
+  table.sptable input, table.sptable select{padding:5px 6px;font-size:.76rem;}
+  table.sptable input.idcell{font-family:'JetBrains Mono',monospace;font-size:.7rem;width:11ch;}
+  table.sptable input.iddiffcell{width:6ch;}
+  table.sptable input.namecell{min-width:130px;}
+  .sptable-wrap{overflow-x:auto;max-height:420px;overflow-y:auto;border:1px solid var(--line);border-radius:10px;}
+  .rowremove{flex:none;width:22px;height:22px;padding:0;border-radius:50%;border:1px solid var(--line);background:transparent;color:var(--ink-soft);cursor:pointer;font-size:.9rem;line-height:1;}
+  .rowremove:hover{border-color:var(--danger);color:var(--danger);}
+
+  .addspecies{display:flex;flex-wrap:wrap;gap:6px;align-items:center;background:var(--paper-2);border-radius:10px;padding:10px;margin-top:8px;}
+  .addspecies .field{flex:1;min-width:110px;}
+
+  textarea.exportbox{width:100%;font-family:'JetBrains Mono',monospace;font-size:.68rem;line-height:1.4;background:var(--paper);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:8px;resize:vertical;min-height:140px;}
+  .copybtn{align-self:flex-start;}
+
+  .empty{color:var(--ink-soft);font-size:.86rem;font-style:italic;padding:16px 2px;text-align:center;}
+
+  footer{font-family:'JetBrains Mono',monospace;font-size:.68rem;color:var(--ink-soft);text-align:center;padding-top:6px;}
+</style>
+
+<div id="app">
+  <header>
+    <div class="eyebrow">Twitchathon &middot; companion tool</div>
+    <h1>Location Editor</h1>
+    <p>Add, edit and delete the locations that make up the Twitchathon map &mdash; their name, real eBird hotspot, camp/hide/water flags, blurb, and the list of species on offer there. Starts loaded with the game's current South Australian set; clear it out and build a fresh set for anywhere eBird has hotspots &mdash; Victoria, England, wherever &mdash; using the same rules, then export and paste back into <span class="mono">index.html</span>. Once you've got a location list, head to the <a href="map-editor.html">map editor</a> to place it on the map and wire up roads.</p>
+    <div class="stats">
+      <span><b id="statLocations">0</b> locations</span>
+      <span><b id="statSpecies">0</b> species</span>
+      <span><b id="statHub">&mdash;</b> hub/camp site</span>
+    </div>
+  </header>
+
+  <div id="warnPanel"></div>
+
+  <div class="toolbar">
+    <button id="addLocBtn" class="primary">+ Add location</button>
+    <button id="clearAllBtn" class="danger">Clear all &amp; start fresh</button>
+    <span class="hint" style="margin-left:auto;">Changes here don&rsquo;t touch the live game until you paste the export back in.</span>
+  </div>
+
+  <details class="panel-details">
+    <summary>Import a SITES block&hellip;</summary>
+    <p class="sub">Paste the <span class="mono">SITES</span> block from <span class="mono">index.html</span> (or an export from this tool, saved earlier) to replace everything below with it.</p>
+    <textarea id="importInput" rows="4" placeholder="Paste a full SITES = {...} block here"></textarea>
+    <div style="display:flex;gap:10px;align-items:center;margin-top:8px;flex-wrap:wrap;">
+      <button id="importBtn">Replace with this</button>
+      <span class="hint" id="importMsg" style="margin:0;"></span>
+    </div>
+  </details>
+
+  <details class="panel-details">
+    <summary>eBird API key&hellip;</summary>
+    <p class="sub">Pulling species straight from eBird (below, per location) needs a free API key — get one at <a href="https://ebird.org/api/keygen" target="_blank" rel="noopener">ebird.org/api/keygen</a>. It's saved only in this browser (localStorage) and sent only to eBird's own API, never anywhere else.</p>
+    <div class="fieldrow">
+      <div class="field"><label class="fieldlabel">Key</label><input type="text" id="ebirdKey" class="mono" placeholder="paste your eBird API key"></div>
+    </div>
+  </details>
+
+  <div class="layout">
+    <section class="panel">
+      <h2>Locations <span class="count" id="locCountLabel"></span></h2>
+      <div class="loclist" id="locList"></div>
+    </section>
+
+    <section class="panel" id="editorPanel"></section>
+  </div>
+
+  <section class="panel">
+    <h2>Export to the game</h2>
+    <p class="sub">Replace the whole <span class="mono">var SITES = {...};</span> block in <span class="mono">index.html</span> with this. Species ids and site ids are shared with the map editor, so nothing else needs to change there for the site list itself &mdash; just its positions and roads.</p>
+    <label class="fieldlabel">SITES</label>
+    <textarea id="sitesExport" class="exportbox" readonly rows="10"></textarea>
+    <button class="copybtn" data-copy="sitesExport">Copy SITES block</button>
+    <div id="loopExportWrap" hidden>
+      <label class="fieldlabel" style="margin-top:10px;">CONFIG.siteLoopOptions (optional)</label>
+      <p class="sub" style="margin:2px 0 4px;">Only locations with custom loop lengths set show up here &mdash; paste this in to override <span class="mono">CONFIG.loopOptionsBySize</span> for just those sites. Anything you skip falls back to the by-size default automatically.</p>
+      <textarea id="loopExport" class="exportbox" readonly rows="4"></textarea>
+      <button class="copybtn" data-copy="loopExport">Copy loop options</button>
+    </div>
+  </section>
+
+  <footer>Twitchathon location editor &middot; pairs with the map editor for positions and roads</footer>
+</div>
+
+<script>
+(function(){
+"use strict";
+
+var TIER_OPTIONS = ["common","uncommon","rare","mega"];
+var GROUP_OPTIONS = ["bush","water","raptor","nocturnal"];
+var SIZE_OPTIONS = ["pocket","standard","large"];
+var ZONE_OPTIONS = ["inland","coastal"];
+var LOOP_OPTIONS = ["quick","short","medium","long","extended"];
+
+function clone(o){ return JSON.parse(JSON.stringify(o)); }
+function esc(s){ return String(s==null?"":s).replace(/[&<>"']/g, function(c){ return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]; }); }
+function clamp(v,lo,hi){ return Math.max(lo, Math.min(hi, v)); }
+function slug(name){ return String(name||"").toLowerCase().replace(/[^a-z0-9]+/g,""); }
+
+/* Snapshotted from the game's current SITES object (index.html) — machine-
+   generated from that file, not hand-typed, so it's an exact match. This is
+   the tool's starting point; "Clear all & start fresh" empties it out for a
+   brand-new region, and "Import a SITES block" replaces it with whatever
+   you paste in instead. */
+var DEFAULT_SITES = [{"id":"mountmonster","name":"Granite Outcrop","hotspot":"Mount Monster Conservation Park","size":"large","zone":"inland","hide":false,"hub":false,"wet":false,"blurb":"Box mallee and stringybark heath — the richest patch of scrub on the map, if you can spare the time to work it properly.","species":[{"id":"mm_magpie","name":"Australian Magpie","tier":"common","group":"bush","idDiff":0.92,"audio":false},{"id":"mm_galah","name":"Galah","tier":"common","group":"bush","idDiff":0.9,"audio":false},{"id":"mm_ringneck","name":"Australian Ringneck","tier":"common","group":"bush","idDiff":0.85,"audio":false},{"id":"mm_fairywren","name":"Superb Fairywren","tier":"common","group":"bush","idDiff":0.8,"audio":false},{"id":"mm_nhhoneyeater","name":"New Holland Honeyeater","tier":"common","group":"bush","idDiff":0.8,"audio":false},{"id":"mm_wagtail","name":"Willie Wagtail","tier":"common","group":"bush","idDiff":0.9,"audio":false},{"id":"mm_weebill","name":"Weebill","tier":"common","group":"bush","idDiff":0.6,"audio":false},{"id":"mm_pigeon","name":"Crested Pigeon","tier":"common","group":"bush","idDiff":0.9,"audio":false},{"id":"mm_fantail","name":"Grey Fantail","tier":"common","group":"bush","idDiff":0.85,"audio":false},{"id":"mm_swallow","name":"Welcome Swallow","tier":"common","group":"bush","idDiff":0.85,"audio":false},{"id":"mm_raven","name":"Australian Raven","tier":"common","group":"bush","idDiff":0.65,"audio":false},{"id":"mm_maggielark","name":"Magpie-lark","tier":"common","group":"bush","idDiff":0.85,"audio":false},{"id":"mm_rrparrot","name":"Red-rumped Parrot","tier":"uncommon","group":"bush","idDiff":0.75,"audio":false},{"id":"mm_musklorikeet","name":"Musk Lorikeet","tier":"uncommon","group":"bush","idDiff":0.65,"audio":false},{"id":"mm_redwattlebird","name":"Red Wattlebird","tier":"uncommon","group":"bush","idDiff":0.7,"audio":false},{"id":"mm_wehoneyeater","name":"White-eared Honeyeater","tier":"uncommon","group":"bush","idDiff":0.55,"audio":false},{"id":"mm_pardalote","name":"Striated Pardalote","tier":"uncommon","group":"bush","idDiff":0.55,"audio":false},{"id":"mm_yrthornbill","name":"Yellow-rumped Thornbill","tier":"uncommon","group":"bush","idDiff":0.55,"audio":false},{"id":"mm_babbler","name":"White-browed Babbler","tier":"uncommon","group":"bush","idDiff":0.55,"audio":false},{"id":"mm_sittella","name":"Varied Sittella","tier":"uncommon","group":"bush","idDiff":0.5,"audio":false},{"id":"mm_shrikethrush","name":"Grey Shrike-thrush","tier":"uncommon","group":"bush","idDiff":0.6,"audio":false},{"id":"mm_cuckooshrike","name":"Black-faced Cuckooshrike","tier":"uncommon","group":"bush","idDiff":0.6,"audio":false},{"id":"mm_kingfisher","name":"Sacred Kingfisher","tier":"uncommon","group":"bush","idDiff":0.7,"audio":false},{"id":"mm_whistler","name":"Rufous Whistler","tier":"uncommon","group":"bush","idDiff":0.65,"audio":false},{"id":"mm_dove","name":"Peaceful Dove","tier":"uncommon","group":"bush","idDiff":0.7,"audio":false},{"id":"mm_eagle","name":"Wedge-tailed Eagle","tier":"uncommon","group":"raptor","idDiff":0.7,"audio":false},{"id":"mm_ytcockatoo","name":"Yellow-tailed Black-Cockatoo","tier":"uncommon","group":"bush","idDiff":0.75,"audio":false},{"id":"mm_goshawk","name":"Brown Goshawk","tier":"uncommon","group":"raptor","idDiff":0.55,"audio":false},{"id":"mm_heathwren","name":"Shy Heathwren","tier":"rare","group":"bush","idDiff":0.5,"audio":false},{"id":"mm_scrubrobin","name":"Southern Scrub-robin","tier":"rare","group":"bush","idDiff":0.35,"audio":false},{"id":"mm_buttonquail","name":"Painted Buttonquail","tier":"rare","group":"bush","idDiff":0.35,"audio":false},{"id":"mm_fantailedcuckoo","name":"Fan-tailed Cuckoo","tier":"rare","group":"bush","idDiff":0.45,"audio":false},{"id":"mm_blueparrot","name":"Blue-winged Parrot","tier":"rare","group":"bush","idDiff":0.4,"audio":false},{"id":"mm_yellowrobin","name":"Eastern Yellow Robin","tier":"rare","group":"bush","idDiff":0.55,"audio":false},{"id":"mm_littleeagle","name":"Little Eagle","tier":"rare","group":"raptor","idDiff":0.45,"audio":false},{"id":"mm_spottedharrier","name":"Spotted Harrier","tier":"rare","group":"raptor","idDiff":0.4,"audio":false},{"id":"mm_bellbird","name":"Crested Bellbird","tier":"rare","group":"bush","idDiff":0.5,"audio":false},{"id":"mm_boobook","name":"Australian Boobook","tier":"rare","group":"nocturnal","idDiff":0.55,"audio":true},{"id":"mm_owletnightjar","name":"Australian Owlet-nightjar","tier":"rare","group":"nocturnal","idDiff":0.5,"audio":true},{"id":"mm_blackfalcon","name":"Black Falcon","tier":"mega","group":"raptor","idDiff":0.3,"audio":false}],"loopOptions":["short","medium"]},{"id":"mcinwheel","name":"Reclaimed Quarry","hotspot":"Lake McIntyre","size":"large","zone":"inland","hide":true,"hub":false,"wet":true,"blurb":"The big town lake, reclaimed from an old quarry — more duck species on one stretch of water than anywhere else on the map.","species":[{"id":"lm_swan","name":"Black Swan","tier":"common","group":"water","idDiff":0.85,"audio":false},{"id":"lm_pbduck","name":"Pacific Black Duck","tier":"common","group":"water","idDiff":0.85,"audio":false},{"id":"lm_teal","name":"Grey Teal","tier":"common","group":"water","idDiff":0.8,"audio":false},{"id":"lm_coot","name":"Eurasian Coot","tier":"common","group":"water","idDiff":0.85,"audio":false},{"id":"lm_swamphen","name":"Australasian Swamphen","tier":"common","group":"water","idDiff":0.8,"audio":false},{"id":"lm_gull","name":"Silver Gull","tier":"common","group":"water","idDiff":0.9,"audio":false},{"id":"lm_ibis","name":"Australian White Ibis","tier":"common","group":"water","idDiff":0.85,"audio":false},{"id":"lm_lapwing","name":"Masked Lapwing","tier":"common","group":"water","idDiff":0.85,"audio":false},{"id":"lm_swallow","name":"Welcome Swallow","tier":"common","group":"bush","idDiff":0.85,"audio":false},{"id":"lm_chestnutteal","name":"Chestnut Teal","tier":"uncommon","group":"water","idDiff":0.7,"audio":false},{"id":"lm_hardhead","name":"Hardhead","tier":"uncommon","group":"water","idDiff":0.6,"audio":false},{"id":"lm_strawibis","name":"Straw-necked Ibis","tier":"uncommon","group":"water","idDiff":0.75,"audio":false},{"id":"lm_royalspoonbill","name":"Royal Spoonbill","tier":"uncommon","group":"water","idDiff":0.65,"audio":false},{"id":"lm_ybspoonbill","name":"Yellow-billed Spoonbill","tier":"uncommon","group":"water","idDiff":0.6,"audio":false},{"id":"lm_kite","name":"Whistling Kite","tier":"uncommon","group":"raptor","idDiff":0.6,"audio":false},{"id":"lm_moorhen","name":"Dusky Moorhen","tier":"uncommon","group":"water","idDiff":0.7,"audio":false},{"id":"lm_lpcormorant","name":"Little Pied Cormorant","tier":"uncommon","group":"water","idDiff":0.75,"audio":false},{"id":"lm_pcormorant","name":"Pied Cormorant","tier":"uncommon","group":"water","idDiff":0.6,"audio":false},{"id":"lm_nightheron","name":"Nankeen Night Heron","tier":"uncommon","group":"nocturnal","idDiff":0.55,"audio":false},{"id":"lm_heron","name":"White-faced Heron","tier":"uncommon","group":"water","idDiff":0.75,"audio":false},{"id":"lm_muskduck","name":"Musk Duck","tier":"uncommon","group":"water","idDiff":0.55,"audio":false},{"id":"lm_shelduck","name":"Australian Shelduck","tier":"uncommon","group":"water","idDiff":0.7,"audio":false},{"id":"lm_woodduck","name":"Maned Duck","tier":"uncommon","group":"water","idDiff":0.75,"audio":false},{"id":"lm_freckledduck","name":"Freckled Duck","tier":"rare","group":"water","idDiff":0.4,"audio":false},{"id":"lm_bbduck","name":"Blue-billed Duck","tier":"rare","group":"water","idDiff":0.45,"audio":false},{"id":"lm_snipe","name":"Latham's Snipe","tier":"rare","group":"water","idDiff":0.4,"audio":false},{"id":"lm_avocet","name":"Red-necked Avocet","tier":"rare","group":"water","idDiff":0.55,"audio":false},{"id":"lm_pinkeared","name":"Pink-eared Duck","tier":"rare","group":"water","idDiff":0.45,"audio":false},{"id":"lm_crestedgrebe","name":"Great Crested Grebe","tier":"rare","group":"water","idDiff":0.55,"audio":false},{"id":"lm_darter","name":"Australasian Darter","tier":"rare","group":"water","idDiff":0.45,"audio":false},{"id":"lm_glossyibis","name":"Glossy Ibis","tier":"rare","group":"water","idDiff":0.4,"audio":false},{"id":"lm_spottedharrier","name":"Spotted Harrier","tier":"rare","group":"raptor","idDiff":0.4,"audio":false},{"id":"lm_paintedsnipe","name":"Australian Painted-Snipe","tier":"mega","group":"water","idDiff":0.3,"audio":false}],"loopOptions":["quick","short"]},{"id":"naracoortecaves","name":"Limestone Caves","hotspot":"Naracoorte Caves National Park","size":"large","zone":"inland","hide":false,"hub":false,"wet":false,"blurb":"World Heritage limestone caves in stringybark forest — treecreepers and robins by day, owls and nightjars once you duck into the cave mouth at dusk.","species":[{"id":"nc_magpie","name":"Australian Magpie","tier":"common","group":"bush","idDiff":0.92,"audio":false},{"id":"nc_galah","name":"Galah","tier":"common","group":"bush","idDiff":0.9,"audio":false},{"id":"nc_rosella","name":"Crimson Rosella","tier":"common","group":"bush","idDiff":0.85,"audio":false},{"id":"nc_fairywren","name":"Superb Fairywren","tier":"common","group":"bush","idDiff":0.8,"audio":false},{"id":"nc_nhhoneyeater","name":"New Holland Honeyeater","tier":"common","group":"bush","idDiff":0.8,"audio":false},{"id":"nc_wagtail","name":"Willie Wagtail","tier":"common","group":"bush","idDiff":0.9,"audio":false},{"id":"nc_fantail","name":"Grey Fantail","tier":"common","group":"bush","idDiff":0.85,"audio":false},{"id":"nc_swallow","name":"Welcome Swallow","tier":"common","group":"bush","idDiff":0.85,"audio":false},{"id":"nc_silvereye","name":"Silvereye","tier":"common","group":"bush","idDiff":0.85,"audio":false},{"id":"nc_eastrosella","name":"Eastern Rosella","tier":"common","group":"bush","idDiff":0.8,"audio":false},{"id":"nc_treecreeper","name":"White-throated Treecreeper","tier":"uncommon","group":"bush","idDiff":0.6,"audio":false},{"id":"nc_browntreecreeper","name":"Brown Treecreeper","tier":"uncommon","group":"bush","idDiff":0.55,"audio":false},{"id":"nc_redwattlebird","name":"Red Wattlebird","tier":"uncommon","group":"bush","idDiff":0.7,"audio":false},{"id":"nc_wnhoneyeater","name":"White-naped Honeyeater","tier":"uncommon","group":"bush","idDiff":0.55,"audio":false},{"id":"nc_pardalote","name":"Spotted Pardalote","tier":"uncommon","group":"bush","idDiff":0.5,"audio":false},{"id":"nc_scrubwren","name":"White-browed Scrubwren","tier":"uncommon","group":"bush","idDiff":0.55,"audio":false},{"id":"nc_shriketit","name":"Eastern Shrike-tit","tier":"uncommon","group":"bush","idDiff":0.45,"audio":false},{"id":"nc_shrikethrush","name":"Grey Shrike-thrush","tier":"uncommon","group":"bush","idDiff":0.6,"audio":false},{"id":"nc_goldenwhistler","name":"Golden Whistler","tier":"uncommon","group":"bush","idDiff":0.6,"audio":false},{"id":"nc_yellowrobin","name":"Eastern Yellow Robin","tier":"uncommon","group":"bush","idDiff":0.55,"audio":false},{"id":"nc_kookaburra","name":"Laughing Kookaburra","tier":"uncommon","group":"bush","idDiff":0.8,"audio":false},{"id":"nc_sittella","name":"Varied Sittella","tier":"uncommon","group":"bush","idDiff":0.5,"audio":false},{"id":"nc_ytcockatoo","name":"Yellow-tailed Black-Cockatoo","tier":"uncommon","group":"bush","idDiff":0.75,"audio":false},{"id":"nc_rtcockatoo","name":"Red-tailed Black-Cockatoo","tier":"uncommon","group":"bush","idDiff":0.7,"audio":false},{"id":"nc_boobook","name":"Australian Boobook","tier":"rare","group":"nocturnal","idDiff":0.55,"audio":true},{"id":"nc_owletnightjar","name":"Australian Owlet-nightjar","tier":"rare","group":"nocturnal","idDiff":0.5,"audio":true},{"id":"nc_scarletrobin","name":"Scarlet Robin","tier":"rare","group":"bush","idDiff":0.55,"audio":false},{"id":"nc_hoodedrobin","name":"Hooded Robin","tier":"rare","group":"bush","idDiff":0.45,"audio":false},{"id":"nc_chough","name":"White-winged Chough","tier":"rare","group":"bush","idDiff":0.6,"audio":false},{"id":"nc_beeeater","name":"Rainbow Bee-eater","tier":"rare","group":"bush","idDiff":0.6,"audio":false},{"id":"nc_buttonquail","name":"Painted Buttonquail","tier":"rare","group":"bush","idDiff":0.35,"audio":false},{"id":"nc_littleeagle","name":"Little Eagle","tier":"rare","group":"raptor","idDiff":0.45,"audio":false}],"loopOptions":["medium","long"]},{"id":"bordertownwetlands","name":"Sewage Ponds","hotspot":"Bordertown Wetlands and Sewage Ponds","size":"large","zone":"inland","hide":true,"hub":true,"wet":true,"blurb":"Camp, the shop, the pub, and the only reliable phone signal on the map — plus treatment ponds thick with ducks and crakes if you work the reeds.","species":[{"id":"bw_swan","name":"Black Swan","tier":"common","group":"water","idDiff":0.85,"audio":false},{"id":"bw_pbduck","name":"Pacific Black Duck","tier":"common","group":"water","idDiff":0.85,"audio":false},{"id":"bw_teal","name":"Grey Teal","tier":"common","group":"water","idDiff":0.8,"audio":false},{"id":"bw_coot","name":"Eurasian Coot","tier":"common","group":"water","idDiff":0.85,"audio":false},{"id":"bw_swamphen","name":"Australasian Swamphen","tier":"common","group":"water","idDiff":0.8,"audio":false},{"id":"bw_magpie","name":"Australian Magpie","tier":"common","group":"bush","idDiff":0.92,"audio":false},{"id":"bw_maggielark","name":"Magpie-lark","tier":"common","group":"bush","idDiff":0.85,"audio":false},{"id":"bw_wagtail","name":"Willie Wagtail","tier":"common","group":"bush","idDiff":0.9,"audio":false},{"id":"bw_shelduck","name":"Australian Shelduck","tier":"uncommon","group":"water","idDiff":0.7,"audio":false},{"id":"bw_shoveler","name":"Australasian Shoveler","tier":"uncommon","group":"water","idDiff":0.6,"audio":false},{"id":"bw_hardhead","name":"Hardhead","tier":"uncommon","group":"water","idDiff":0.6,"audio":false},{"id":"bw_nativehen","name":"Black-tailed Nativehen","tier":"uncommon","group":"water","idDiff":0.65,"audio":false},{"id":"bw_moorhen","name":"Dusky Moorhen","tier":"uncommon","group":"water","idDiff":0.7,"audio":false},{"id":"bw_dotterel","name":"Black-fronted Dotterel","tier":"uncommon","group":"water","idDiff":0.6,"audio":false},{"id":"bw_ausgrebe","name":"Australasian Grebe","tier":"uncommon","group":"water","idDiff":0.6,"audio":false},{"id":"bw_darter","name":"Australasian Darter","tier":"uncommon","group":"water","idDiff":0.5,"audio":false},{"id":"bw_kite","name":"Whistling Kite","tier":"uncommon","group":"raptor","idDiff":0.6,"audio":false},{"id":"bw_woodduck","name":"Maned Duck","tier":"uncommon","group":"water","idDiff":0.75,"audio":false},{"id":"bw_pinkeared","name":"Pink-eared Duck","tier":"uncommon","group":"water","idDiff":0.55,"audio":false},{"id":"bw_reedwarbler","name":"Australian Reed Warbler","tier":"uncommon","group":"bush","idDiff":0.55,"audio":false},{"id":"bw_grassbird","name":"Little Grassbird","tier":"uncommon","group":"bush","idDiff":0.5,"audio":false},{"id":"bw_kestrel","name":"Nankeen Kestrel","tier":"uncommon","group":"raptor","idDiff":0.6,"audio":false},{"id":"bw_auscrake","name":"Australian Crake","tier":"rare","group":"water","idDiff":0.35,"audio":false},{"id":"bw_baillonscrake","name":"Baillon's Crake","tier":"rare","group":"water","idDiff":0.35,"audio":false},{"id":"bw_bbduck","name":"Blue-billed Duck","tier":"rare","group":"water","idDiff":0.45,"audio":false},{"id":"bw_freckledduck","name":"Freckled Duck","tier":"rare","group":"water","idDiff":0.4,"audio":false},{"id":"bw_rkdotterel","name":"Red-kneed Dotterel","tier":"rare","group":"water","idDiff":0.45,"audio":false},{"id":"bw_ybspoonbill","name":"Yellow-billed Spoonbill","tier":"rare","group":"water","idDiff":0.55,"audio":false},{"id":"bw_swampharrier","name":"Swamp Harrier","tier":"rare","group":"raptor","idDiff":0.5,"audio":false},{"id":"bw_littleeagle","name":"Little Eagle","tier":"rare","group":"raptor","idDiff":0.45,"audio":false},{"id":"bw_blackfalcon","name":"Black Falcon","tier":"mega","group":"raptor","idDiff":0.3,"audio":false}],"loopOptions":["quick","short","medium"]},{"id":"banghamcp","name":"Mallee Scrub","hotspot":"Bangham Conservation Park","size":"large","zone":"inland","hide":false,"hub":false,"wet":false,"blurb":"Mallee box and stringybark scrub — a long list if you're patient, heathwrens and buttonquail included.","species":[{"id":"bg_galah","name":"Galah","tier":"common","group":"bush","idDiff":0.9,"audio":false},{"id":"bg_magpie","name":"Australian Magpie","tier":"common","group":"bush","idDiff":0.92,"audio":false},{"id":"bg_fairywren","name":"Superb Fairywren","tier":"common","group":"bush","idDiff":0.8,"audio":false},{"id":"bg_crimsonrosella","name":"Crimson Rosella","tier":"common","group":"bush","idDiff":0.85,"audio":false},{"id":"bg_wagtail","name":"Willie Wagtail","tier":"common","group":"bush","idDiff":0.9,"audio":false},{"id":"bg_fantail","name":"Grey Fantail","tier":"common","group":"bush","idDiff":0.85,"audio":false},{"id":"bg_ringneck","name":"Australian Ringneck","tier":"uncommon","group":"bush","idDiff":0.8,"audio":false},{"id":"bg_treecreeperw","name":"White-throated Treecreeper","tier":"uncommon","group":"bush","idDiff":0.6,"audio":false},{"id":"bg_treecreeperb","name":"Brown Treecreeper","tier":"uncommon","group":"bush","idDiff":0.55,"audio":false},{"id":"bg_redwattlebird","name":"Red Wattlebird","tier":"uncommon","group":"bush","idDiff":0.7,"audio":false},{"id":"bg_babbler","name":"White-browed Babbler","tier":"uncommon","group":"bush","idDiff":0.55,"audio":false},{"id":"bg_shrikethrush","name":"Grey Shrike-thrush","tier":"uncommon","group":"bush","idDiff":0.6,"audio":false},{"id":"bg_chough","name":"White-winged Chough","tier":"uncommon","group":"bush","idDiff":0.6,"audio":false},{"id":"bg_yellowrobin","name":"Eastern Yellow Robin","tier":"uncommon","group":"bush","idDiff":0.55,"audio":false},{"id":"bg_jackywinter","name":"Jacky-winter","tier":"uncommon","group":"bush","idDiff":0.55,"audio":false},{"id":"bg_ytcockatoo","name":"Yellow-tailed Black-Cockatoo","tier":"uncommon","group":"bush","idDiff":0.75,"audio":false},{"id":"bg_rtcockatoo","name":"Red-tailed Black-Cockatoo","tier":"uncommon","group":"bush","idDiff":0.7,"audio":false},{"id":"bg_woodswallow","name":"Dusky Woodswallow","tier":"uncommon","group":"bush","idDiff":0.55,"audio":false},{"id":"bg_kestrel","name":"Nankeen Kestrel","tier":"uncommon","group":"raptor","idDiff":0.6,"audio":false},{"id":"bg_eagle","name":"Wedge-tailed Eagle","tier":"uncommon","group":"raptor","idDiff":0.7,"audio":false},{"id":"bg_heathwren","name":"Chestnut-rumped Heathwren","tier":"rare","group":"bush","idDiff":0.45,"audio":false},{"id":"bg_scrubrobin","name":"Southern Scrub-robin","tier":"rare","group":"bush","idDiff":0.35,"audio":false},{"id":"bg_hoodedrobin","name":"Hooded Robin","tier":"rare","group":"bush","idDiff":0.45,"audio":false},{"id":"bg_scarletrobin","name":"Scarlet Robin","tier":"rare","group":"bush","idDiff":0.55,"audio":false},{"id":"bg_buttonquail","name":"Painted Buttonquail","tier":"rare","group":"bush","idDiff":0.35,"audio":false},{"id":"bg_firetail","name":"Diamond Firetail","tier":"rare","group":"bush","idDiff":0.45,"audio":false},{"id":"bg_gilbertswhistler","name":"Gilbert's Whistler","tier":"rare","group":"bush","idDiff":0.4,"audio":false},{"id":"bg_greybabbler","name":"Gray-crowned Babbler","tier":"rare","group":"bush","idDiff":0.45,"audio":false},{"id":"bg_boobook","name":"Australian Boobook","tier":"rare","group":"nocturnal","idDiff":0.55,"audio":true},{"id":"bg_owletnightjar","name":"Australian Owlet-nightjar","tier":"rare","group":"nocturnal","idDiff":0.5,"audio":true},{"id":"bg_spottedharrier","name":"Spotted Harrier","tier":"rare","group":"raptor","idDiff":0.4,"audio":false}],"loopOptions":["medium","long"]},{"id":"penolacp","name":"Wet Forest","hotspot":"Penola Conservation Park","size":"large","zone":"inland","hide":false,"hub":false,"wet":false,"blurb":"Wet forest and stringybark — treecreepers and robins all day, with a long-shot owl if you linger past dusk.","species":[{"id":"pn_magpie","name":"Australian Magpie","tier":"common","group":"bush","idDiff":0.92,"audio":false},{"id":"pn_galah","name":"Galah","tier":"common","group":"bush","idDiff":0.9,"audio":false},{"id":"pn_crimsonrosella","name":"Crimson Rosella","tier":"common","group":"bush","idDiff":0.88,"audio":false},{"id":"pn_fairywren","name":"Superb Fairywren","tier":"common","group":"bush","idDiff":0.85,"audio":false},{"id":"pn_fantail","name":"Grey Fantail","tier":"common","group":"bush","idDiff":0.85,"audio":false},{"id":"pn_wagtail","name":"Willie Wagtail","tier":"common","group":"bush","idDiff":0.9,"audio":false},{"id":"pn_nhhoneyeater","name":"New Holland Honeyeater","tier":"common","group":"bush","idDiff":0.85,"audio":false},{"id":"pn_scrubwren","name":"White-browed Scrubwren","tier":"uncommon","group":"bush","idDiff":0.75,"audio":false},{"id":"pn_treecreeper","name":"White-throated Treecreeper","tier":"uncommon","group":"bush","idDiff":0.65,"audio":false},{"id":"pn_yfhoneyeater","name":"Yellow-faced Honeyeater","tier":"uncommon","group":"bush","idDiff":0.7,"audio":false},{"id":"pn_redwattlebird","name":"Red Wattlebird","tier":"uncommon","group":"bush","idDiff":0.75,"audio":false},{"id":"pn_wehoneyeater","name":"White-eared Honeyeater","tier":"uncommon","group":"bush","idDiff":0.65,"audio":false},{"id":"pn_stripardalote","name":"Striated Pardalote","tier":"uncommon","group":"bush","idDiff":0.7,"audio":false},{"id":"pn_spotpardalote","name":"Spotted Pardalote","tier":"uncommon","group":"bush","idDiff":0.65,"audio":false},{"id":"pn_rufouswhistler","name":"Rufous Whistler","tier":"uncommon","group":"bush","idDiff":0.65,"audio":false},{"id":"pn_goldenwhistler","name":"Golden Whistler","tier":"uncommon","group":"bush","idDiff":0.6,"audio":false},{"id":"pn_ytcockatoo","name":"Yellow-tailed Black-Cockatoo","tier":"uncommon","group":"bush","idDiff":0.75,"audio":false},{"id":"pn_sittella","name":"Varied Sittella","tier":"uncommon","group":"bush","idDiff":0.55,"audio":false},{"id":"pn_greycurrawong","name":"Grey Currawong","tier":"uncommon","group":"bush","idDiff":0.65,"audio":false},{"id":"pn_cuckooshrike","name":"Black-faced Cuckooshrike","tier":"uncommon","group":"bush","idDiff":0.6,"audio":false},{"id":"pn_kingfisher","name":"Sacred Kingfisher","tier":"uncommon","group":"bush","idDiff":0.6,"audio":false},{"id":"pn_woodswallow","name":"Dusky Woodswallow","tier":"uncommon","group":"bush","idDiff":0.55,"audio":false},{"id":"pn_browntreecreeper","name":"Brown Treecreeper","tier":"uncommon","group":"bush","idDiff":0.55,"audio":false},{"id":"pn_spinebill","name":"Eastern Spinebill","tier":"uncommon","group":"bush","idDiff":0.6,"audio":false},{"id":"pn_brownheadedhoneyeater","name":"Brown-headed Honeyeater","tier":"uncommon","group":"bush","idDiff":0.55,"audio":false},{"id":"pn_yellowrobin","name":"Eastern Yellow Robin","tier":"uncommon","group":"bush","idDiff":0.55,"audio":false},{"id":"pn_wedgetailedeagle","name":"Wedge-tailed Eagle","tier":"uncommon","group":"raptor","idDiff":0.7,"audio":false},{"id":"pn_brownfalcon","name":"Brown Falcon","tier":"uncommon","group":"raptor","idDiff":0.6,"audio":false},{"id":"pn_emuwren","name":"Southern Emu-wren","tier":"rare","group":"bush","idDiff":0.4,"audio":false},{"id":"pn_buttonquail","name":"Painted Buttonquail","tier":"rare","group":"bush","idDiff":0.35,"audio":false},{"id":"pn_shriketit","name":"Eastern Shrike-tit","tier":"rare","group":"bush","idDiff":0.4,"audio":false},{"id":"pn_firetail","name":"Beautiful Firetail","tier":"rare","group":"bush","idDiff":0.4,"audio":false},{"id":"pn_scarletrobin","name":"Scarlet Robin","tier":"rare","group":"bush","idDiff":0.5,"audio":false},{"id":"pn_hoodedrobin","name":"Hooded Robin","tier":"rare","group":"bush","idDiff":0.45,"audio":false},{"id":"pn_swampharrier","name":"Swamp Harrier","tier":"rare","group":"raptor","idDiff":0.45,"audio":false},{"id":"pn_boobook","name":"Australian Boobook","tier":"rare","group":"nocturnal","idDiff":0.55,"audio":true},{"id":"pn_owletnightjar","name":"Australian Owlet-nightjar","tier":"rare","group":"nocturnal","idDiff":0.5,"audio":true},{"id":"pn_barkingowl","name":"Barking Owl","tier":"mega","group":"nocturnal","idDiff":0.3,"audio":true}],"loopOptions":["short","medium","long"]},{"id":"lakeleake","name":"Reedy Lake","hotspot":"Lake Leake","size":"large","zone":"inland","hide":false,"hub":false,"wet":true,"blurb":"A big reedy lake behind the dunes — waterfowl by the raft-load, with mallee scrub around the margins for the walkers.","species":[{"id":"ll_blackswan","name":"Black Swan","tier":"common","group":"water","idDiff":0.85,"audio":false},{"id":"ll_shelduck","name":"Australian Shelduck","tier":"common","group":"water","idDiff":0.85,"audio":false},{"id":"ll_greyteal","name":"Grey Teal","tier":"common","group":"water","idDiff":0.85,"audio":false},{"id":"ll_pbduck","name":"Pacific Black Duck","tier":"common","group":"water","idDiff":0.85,"audio":false},{"id":"ll_coot","name":"Eurasian Coot","tier":"common","group":"water","idDiff":0.85,"audio":false},{"id":"ll_swamphen","name":"Australasian Swamphen","tier":"common","group":"water","idDiff":0.85,"audio":false},{"id":"ll_lapwing","name":"Masked Lapwing","tier":"common","group":"water","idDiff":0.88,"audio":false},{"id":"ll_magpie","name":"Australian Magpie","tier":"common","group":"bush","idDiff":0.92,"audio":false},{"id":"ll_fairywren","name":"Superb Fairywren","tier":"common","group":"bush","idDiff":0.85,"audio":false},{"id":"ll_muskduck","name":"Musk Duck","tier":"uncommon","group":"water","idDiff":0.6,"audio":false},{"id":"ll_hardhead","name":"Hardhead","tier":"uncommon","group":"water","idDiff":0.65,"audio":false},{"id":"ll_chestnutteal","name":"Chestnut Teal","tier":"uncommon","group":"water","idDiff":0.7,"audio":false},{"id":"ll_hhgrebe","name":"Hoary-headed Grebe","tier":"uncommon","group":"water","idDiff":0.55,"audio":false},{"id":"ll_ausgrebe","name":"Australasian Grebe","tier":"uncommon","group":"water","idDiff":0.6,"audio":false},{"id":"ll_brolga","name":"Brolga","tier":"uncommon","group":"water","idDiff":0.55,"audio":false},{"id":"ll_stilt","name":"Pied Stilt","tier":"uncommon","group":"water","idDiff":0.6,"audio":false},{"id":"ll_shoveler","name":"Australasian Shoveler","tier":"uncommon","group":"water","idDiff":0.55,"audio":false},{"id":"ll_littlepiedcormorant","name":"Little Pied Cormorant","tier":"uncommon","group":"water","idDiff":0.65,"audio":false},{"id":"ll_royalspoonbill","name":"Royal Spoonbill","tier":"uncommon","group":"water","idDiff":0.55,"audio":false},{"id":"ll_greategret","name":"Great Egret","tier":"uncommon","group":"water","idDiff":0.6,"audio":false},{"id":"ll_pelican","name":"Australian Pelican","tier":"uncommon","group":"water","idDiff":0.7,"audio":false},{"id":"ll_reedwarbler","name":"Australian Reed Warbler","tier":"uncommon","group":"water","idDiff":0.5,"audio":false},{"id":"ll_littlegrassbird","name":"Little Grassbird","tier":"uncommon","group":"water","idDiff":0.45,"audio":false},{"id":"ll_treecreeper","name":"White-throated Treecreeper","tier":"uncommon","group":"bush","idDiff":0.6,"audio":false},{"id":"ll_yfhoneyeater","name":"Yellow-faced Honeyeater","tier":"uncommon","group":"bush","idDiff":0.65,"audio":false},{"id":"ll_nhhoneyeater","name":"New Holland Honeyeater","tier":"uncommon","group":"bush","idDiff":0.7,"audio":false},{"id":"ll_scrubwren","name":"White-browed Scrubwren","tier":"uncommon","group":"bush","idDiff":0.65,"audio":false},{"id":"ll_scarletrobin","name":"Scarlet Robin","tier":"rare","group":"bush","idDiff":0.5,"audio":false},{"id":"ll_wedgetailedeagle","name":"Wedge-tailed Eagle","tier":"uncommon","group":"raptor","idDiff":0.65,"audio":false},{"id":"ll_swampharrier","name":"Swamp Harrier","tier":"uncommon","group":"raptor","idDiff":0.55,"audio":false},{"id":"ll_blackshoulderedkite","name":"Black-shouldered Kite","tier":"uncommon","group":"raptor","idDiff":0.6,"audio":false},{"id":"ll_crake","name":"Australian Crake","tier":"rare","group":"water","idDiff":0.4,"audio":false},{"id":"ll_freckledduck","name":"Freckled Duck","tier":"rare","group":"water","idDiff":0.35,"audio":false},{"id":"ll_seaeagle","name":"White-bellied Sea-Eagle","tier":"mega","group":"raptor","idDiff":0.3,"audio":false}],"loopOptions":["short","medium"]},{"id":"beachportlagoon","name":"Dunes and Beach","hotspot":"Beachport Lagoon","size":"large","zone":"coastal","hide":true,"hub":false,"wet":true,"blurb":"Coastal lagoon behind the township — waders and terns work the open flats, honeyeaters in the tea-tree the rest of the time.","species":[{"id":"bp_greyteal","name":"Grey Teal","tier":"common","group":"water","idDiff":0.85,"audio":false},{"id":"bp_chestnutteal","name":"Chestnut Teal","tier":"common","group":"water","idDiff":0.82,"audio":false},{"id":"bp_blackswan","name":"Black Swan","tier":"common","group":"water","idDiff":0.85,"audio":false},{"id":"bp_coot","name":"Eurasian Coot","tier":"common","group":"water","idDiff":0.85,"audio":false},{"id":"bp_nativehen","name":"Black-tailed Nativehen","tier":"uncommon","group":"water","idDiff":0.65,"audio":false},{"id":"bp_moorhen","name":"Dusky Moorhen","tier":"uncommon","group":"water","idDiff":0.6,"audio":false},{"id":"bp_lapwing","name":"Masked Lapwing","tier":"common","group":"water","idDiff":0.88,"audio":false},{"id":"bp_silvergull","name":"Silver Gull","tier":"common","group":"water","idDiff":0.88,"audio":false},{"id":"bp_whitefacedheron","name":"White-faced Heron","tier":"common","group":"water","idDiff":0.85,"audio":false},{"id":"bp_magpie","name":"Australian Magpie","tier":"common","group":"bush","idDiff":0.92,"audio":false},{"id":"bp_fairywren","name":"Superb Fairywren","tier":"common","group":"bush","idDiff":0.85,"audio":false},{"id":"bp_littlewattlebird","name":"Little Wattlebird","tier":"uncommon","group":"bush","idDiff":0.7,"audio":false},{"id":"bp_redwattlebird","name":"Red Wattlebird","tier":"uncommon","group":"bush","idDiff":0.75,"audio":false},{"id":"bp_nhhoneyeater","name":"New Holland Honeyeater","tier":"uncommon","group":"bush","idDiff":0.75,"audio":false},{"id":"bp_spinycheeked","name":"Spiny-cheeked Honeyeater","tier":"uncommon","group":"bush","idDiff":0.6,"audio":false},{"id":"bp_scrubwren","name":"White-browed Scrubwren","tier":"uncommon","group":"bush","idDiff":0.65,"audio":false},{"id":"bp_babbler","name":"White-browed Babbler","tier":"uncommon","group":"bush","idDiff":0.55,"audio":false},{"id":"bp_fieldwren","name":"Striated Fieldwren","tier":"rare","group":"bush","idDiff":0.4,"audio":false},{"id":"bp_firetail","name":"Beautiful Firetail","tier":"rare","group":"bush","idDiff":0.4,"audio":false},{"id":"bp_nightheron","name":"Nankeen Night Heron","tier":"rare","group":"water","idDiff":0.45,"audio":false},{"id":"bp_littlegrassbird","name":"Little Grassbird","tier":"uncommon","group":"water","idDiff":0.45,"audio":false},{"id":"bp_swamphen","name":"Australasian Swamphen","tier":"uncommon","group":"water","idDiff":0.7,"audio":false},{"id":"bp_ausgrebe","name":"Australasian Grebe","tier":"uncommon","group":"water","idDiff":0.55,"audio":false},{"id":"bp_littlepiedcormorant","name":"Little Pied Cormorant","tier":"uncommon","group":"water","idDiff":0.65,"audio":false},{"id":"bp_greatcormorant","name":"Great Cormorant","tier":"uncommon","group":"water","idDiff":0.6,"audio":false},{"id":"bp_greategret","name":"Great Egret","tier":"uncommon","group":"water","idDiff":0.6,"audio":false},{"id":"bp_blackshoulderedkite","name":"Black-shouldered Kite","tier":"uncommon","group":"raptor","idDiff":0.6,"audio":false},{"id":"bp_hobby","name":"Australian Hobby","tier":"rare","group":"raptor","idDiff":0.45,"audio":false},{"id":"bp_sparrowhawk","name":"Collared Sparrowhawk","tier":"rare","group":"raptor","idDiff":0.5,"audio":false},{"id":"bp_bbrail","name":"Buff-banded Rail","tier":"rare","group":"water","idDiff":0.4,"audio":false},{"id":"bp_avocet","name":"Red-necked Avocet","tier":"uncommon","group":"water","idDiff":0.55,"audio":false},{"id":"bp_redcapplover","name":"Red-capped Plover","tier":"uncommon","group":"water","idDiff":0.55,"audio":false},{"id":"bp_oystercatcher","name":"Sooty Oystercatcher","tier":"rare","group":"water","idDiff":0.4,"audio":false},{"id":"bp_fairytern","name":"Australian Fairy Tern","tier":"mega","group":"water","idDiff":0.3,"audio":false}],"loopOptions":["quick","short"]},{"id":"padthawaycp","name":"Dune Ridge","hotspot":"Padthaway Conservation Park","size":"large","zone":"inland","hide":false,"hub":false,"wet":false,"blurb":"Ridge mallee on the old dune system — heathwrens and honeyeaters if you're patient, Purple-gaped Honeyeater the prize.","species":[{"id":"pd_emu","name":"Emu","tier":"uncommon","group":"bush","idDiff":0.7,"audio":false},{"id":"pd_magpie","name":"Australian Magpie","tier":"common","group":"bush","idDiff":0.92,"audio":false},{"id":"pd_galah","name":"Galah","tier":"common","group":"bush","idDiff":0.9,"audio":false},{"id":"pd_fairywren","name":"Superb Fairywren","tier":"common","group":"bush","idDiff":0.82,"audio":false},{"id":"pd_purplebackedfairywren","name":"Purple-backed Fairywren","tier":"uncommon","group":"bush","idDiff":0.65,"audio":false},{"id":"pd_crimsonrosella","name":"Crimson Rosella","tier":"common","group":"bush","idDiff":0.85,"audio":false},{"id":"pd_ringneck","name":"Australian Ringneck","tier":"uncommon","group":"bush","idDiff":0.75,"audio":false},{"id":"pd_nhhoneyeater","name":"New Holland Honeyeater","tier":"common","group":"bush","idDiff":0.8,"audio":false},{"id":"pd_yfhoneyeater","name":"Yellow-faced Honeyeater","tier":"uncommon","group":"bush","idDiff":0.65,"audio":false},{"id":"pd_wehoneyeater","name":"White-eared Honeyeater","tier":"uncommon","group":"bush","idDiff":0.6,"audio":false},{"id":"pd_spinycheeked","name":"Spiny-cheeked Honeyeater","tier":"uncommon","group":"bush","idDiff":0.6,"audio":false},{"id":"pd_littlewattlebird","name":"Little Wattlebird","tier":"uncommon","group":"bush","idDiff":0.65,"audio":false},{"id":"pd_redwattlebird","name":"Red Wattlebird","tier":"uncommon","group":"bush","idDiff":0.7,"audio":false},{"id":"pd_whitefronted","name":"White-fronted Honeyeater","tier":"rare","group":"bush","idDiff":0.4,"audio":false},{"id":"pd_purplegaped","name":"Purple-gaped Honeyeater","tier":"rare","group":"bush","idDiff":0.35,"audio":false},{"id":"pd_yellowplumed","name":"Yellow-plumed Honeyeater","tier":"rare","group":"bush","idDiff":0.4,"audio":false},{"id":"pd_babbler","name":"White-browed Babbler","tier":"uncommon","group":"bush","idDiff":0.55,"audio":false},{"id":"pd_heathwrenshy","name":"Shy Heathwren","tier":"rare","group":"bush","idDiff":0.4,"audio":false},{"id":"pd_heathwrenchest","name":"Chestnut-rumped Heathwren","tier":"rare","group":"bush","idDiff":0.4,"audio":false},{"id":"pd_scrubrobin","name":"Southern Scrub-robin","tier":"rare","group":"bush","idDiff":0.35,"audio":false},{"id":"pd_treecreeperbrown","name":"Brown Treecreeper","tier":"uncommon","group":"bush","idDiff":0.55,"audio":false},{"id":"pd_sittella","name":"Varied Sittella","tier":"uncommon","group":"bush","idDiff":0.55,"audio":false},{"id":"pd_buttonquail","name":"Painted Buttonquail","tier":"rare","group":"bush","idDiff":0.35,"audio":false},{"id":"pd_thornbillyellowrumped","name":"Yellow-rumped Thornbill","tier":"common","group":"bush","idDiff":0.75,"audio":false},{"id":"pd_thornbillstriated","name":"Striated Thornbill","tier":"uncommon","group":"bush","idDiff":0.65,"audio":false},{"id":"pd_thornbillbuffrumped","name":"Buff-rumped Thornbill","tier":"uncommon","group":"bush","idDiff":0.55,"audio":false},{"id":"pd_ytcockatoo","name":"Yellow-tailed Black-Cockatoo","tier":"uncommon","group":"bush","idDiff":0.75,"audio":false},{"id":"pd_rtcockatoo","name":"Red-tailed Black-Cockatoo","tier":"uncommon","group":"bush","idDiff":0.7,"audio":false},{"id":"pd_hoodedrobin","name":"Hooded Robin","tier":"rare","group":"bush","idDiff":0.45,"audio":false},{"id":"pd_scarletrobin","name":"Scarlet Robin","tier":"rare","group":"bush","idDiff":0.5,"audio":false},{"id":"pd_shriketit","name":"Eastern Shrike-tit","tier":"rare","group":"bush","idDiff":0.4,"audio":false},{"id":"pd_wedgetailedeagle","name":"Wedge-tailed Eagle","tier":"uncommon","group":"raptor","idDiff":0.7,"audio":false},{"id":"pd_kestrel","name":"Nankeen Kestrel","tier":"uncommon","group":"raptor","idDiff":0.65,"audio":false},{"id":"pd_boobook","name":"Australian Boobook","tier":"rare","group":"nocturnal","idDiff":0.55,"audio":true}],"loopOptions":["medium","long","extended"]},{"id":"hackslagoon","name":"Reed Beds","hotspot":"Hacks Lagoon Conservation Reserve","size":"large","zone":"inland","hide":true,"hub":false,"wet":true,"blurb":"The biggest reed-bed on the map — bitterns booming in the reeds if you're lucky, crakes and rails for the patient.","species":[{"id":"hl_magpiegoose","name":"Magpie Goose","tier":"uncommon","group":"water","idDiff":0.6,"audio":false},{"id":"hl_blackswan","name":"Black Swan","tier":"common","group":"water","idDiff":0.85,"audio":false},{"id":"hl_pbduck","name":"Pacific Black Duck","tier":"common","group":"water","idDiff":0.85,"audio":false},{"id":"hl_hardhead","name":"Hardhead","tier":"uncommon","group":"water","idDiff":0.65,"audio":false},{"id":"hl_muskduck","name":"Musk Duck","tier":"uncommon","group":"water","idDiff":0.6,"audio":false},{"id":"hl_nativehen","name":"Black-tailed Nativehen","tier":"uncommon","group":"water","idDiff":0.65,"audio":false},{"id":"hl_coot","name":"Eurasian Coot","tier":"common","group":"water","idDiff":0.85,"audio":false},{"id":"hl_swamphen","name":"Australasian Swamphen","tier":"common","group":"water","idDiff":0.82,"audio":false},{"id":"hl_ibisaus","name":"Australian Ibis","tier":"common","group":"water","idDiff":0.85,"audio":false},{"id":"hl_ibisstraw","name":"Straw-necked Ibis","tier":"common","group":"water","idDiff":0.85,"audio":false},{"id":"hl_greyteal","name":"Grey Teal","tier":"common","group":"water","idDiff":0.85,"audio":false},{"id":"hl_swampharrier","name":"Swamp Harrier","tier":"uncommon","group":"raptor","idDiff":0.6,"audio":false},{"id":"hl_spottedharrier","name":"Spotted Harrier","tier":"rare","group":"raptor","idDiff":0.4,"audio":false},{"id":"hl_fairywren","name":"Superb Fairywren","tier":"common","group":"bush","idDiff":0.82,"audio":false},{"id":"hl_cisticola","name":"Golden-headed Cisticola","tier":"uncommon","group":"water","idDiff":0.5,"audio":false},{"id":"hl_reedwarbler","name":"Australian Reed Warbler","tier":"uncommon","group":"water","idDiff":0.45,"audio":false},{"id":"hl_littlegrassbird","name":"Little Grassbird","tier":"uncommon","group":"water","idDiff":0.45,"audio":false},{"id":"hl_shoveler","name":"Australasian Shoveler","tier":"uncommon","group":"water","idDiff":0.55,"audio":false},{"id":"hl_stilt","name":"Pied Stilt","tier":"uncommon","group":"water","idDiff":0.55,"audio":false},{"id":"hl_bittern","name":"Australasian Bittern","tier":"mega","group":"water","idDiff":0.3,"audio":true},{"id":"hl_nightheron","name":"Nankeen Night Heron","tier":"rare","group":"water","idDiff":0.45,"audio":false},{"id":"hl_flamerobin","name":"Flame Robin","tier":"rare","group":"bush","idDiff":0.45,"audio":false},{"id":"hl_yellowrobin","name":"Eastern Yellow Robin","tier":"uncommon","group":"bush","idDiff":0.55,"audio":false},{"id":"hl_brolga","name":"Brolga","tier":"uncommon","group":"water","idDiff":0.55,"audio":false},{"id":"hl_whiskeredtern","name":"Whiskered Tern","tier":"uncommon","group":"water","idDiff":0.55,"audio":false},{"id":"hl_glossyibis","name":"Glossy Ibis","tier":"rare","group":"water","idDiff":0.4,"audio":false},{"id":"hl_pacificheron","name":"Pacific Heron","tier":"rare","group":"water","idDiff":0.4,"audio":false},{"id":"hl_yellowbilledspoonbill","name":"Yellow-billed Spoonbill","tier":"uncommon","group":"water","idDiff":0.55,"audio":false},{"id":"hl_sharptailedsandpiper","name":"Sharp-tailed Sandpiper","tier":"rare","group":"water","idDiff":0.35,"audio":false},{"id":"hl_lewinsrail","name":"Lewin's Rail","tier":"rare","group":"water","idDiff":0.35,"audio":false},{"id":"hl_spotlesscrake","name":"Spotless Crake","tier":"rare","group":"water","idDiff":0.3,"audio":false},{"id":"hl_littleeagle","name":"Little Eagle","tier":"rare","group":"raptor","idDiff":0.4,"audio":false},{"id":"hl_bluebilledduck","name":"Blue-billed Duck","tier":"rare","group":"water","idDiff":0.35,"audio":false},{"id":"hl_blackfalcon","name":"Black Falcon","tier":"rare","group":"raptor","idDiff":0.35,"audio":false},{"id":"hl_barnowl","name":"Eastern Barn Owl","tier":"rare","group":"nocturnal","idDiff":0.5,"audio":true},{"id":"hl_avocet","name":"Red-necked Avocet","tier":"uncommon","group":"water","idDiff":0.55,"audio":false}],"loopOptions":["quick","short","long"]},{"id":"boollagoon","name":"Game Reserve","hotspot":"Bool Lagoon Game Reserve","size":"large","zone":"inland","hide":true,"hub":false,"wet":true,"blurb":"The region's flagship wetland — thousands of ducks and ibis when it's full, waders scattered right across the flats.","species":[{"id":"bo_magpiegoose","name":"Magpie Goose","tier":"uncommon","group":"water","idDiff":0.6,"audio":false},{"id":"bo_blackswan","name":"Black Swan","tier":"common","group":"water","idDiff":0.88,"audio":false},{"id":"bo_shelduck","name":"Australian Shelduck","tier":"common","group":"water","idDiff":0.85,"audio":false},{"id":"bo_shoveler","name":"Australasian Shoveler","tier":"uncommon","group":"water","idDiff":0.55,"audio":false},{"id":"bo_greyteal","name":"Grey Teal","tier":"common","group":"water","idDiff":0.9,"audio":false},{"id":"bo_chestnutteal","name":"Chestnut Teal","tier":"uncommon","group":"water","idDiff":0.7,"audio":false},{"id":"bo_nativehen","name":"Black-tailed Nativehen","tier":"uncommon","group":"water","idDiff":0.65,"audio":false},{"id":"bo_stilt","name":"Pied Stilt","tier":"common","group":"water","idDiff":0.75,"audio":false},{"id":"bo_lapwing","name":"Masked Lapwing","tier":"common","group":"water","idDiff":0.85,"audio":false},{"id":"bo_whiskeredtern","name":"Whiskered Tern","tier":"uncommon","group":"water","idDiff":0.55,"audio":false},{"id":"bo_glossyibis","name":"Glossy Ibis","tier":"rare","group":"water","idDiff":0.4,"audio":false},{"id":"bo_ibisaus","name":"Australian Ibis","tier":"common","group":"water","idDiff":0.85,"audio":false},{"id":"bo_ibisstraw","name":"Straw-necked Ibis","tier":"common","group":"water","idDiff":0.85,"audio":false},{"id":"bo_spottedharrier","name":"Spotted Harrier","tier":"rare","group":"raptor","idDiff":0.4,"audio":false},{"id":"bo_whistlingkite","name":"Whistling Kite","tier":"uncommon","group":"raptor","idDiff":0.65,"audio":false},{"id":"bo_brownfalcon","name":"Brown Falcon","tier":"uncommon","group":"raptor","idDiff":0.6,"audio":false},{"id":"bo_magpie","name":"Australian Magpie","tier":"common","group":"bush","idDiff":0.9,"audio":false},{"id":"bo_fairywren","name":"Superb Fairywren","tier":"common","group":"bush","idDiff":0.8,"audio":false},{"id":"bo_bluebilledduck","name":"Blue-billed Duck","tier":"rare","group":"water","idDiff":0.35,"audio":false},{"id":"bo_muskduck","name":"Musk Duck","tier":"uncommon","group":"water","idDiff":0.55,"audio":false},{"id":"bo_brolga","name":"Brolga","tier":"uncommon","group":"water","idDiff":0.55,"audio":false},{"id":"bo_nightheron","name":"Nankeen Night Heron","tier":"rare","group":"water","idDiff":0.45,"audio":false},{"id":"bo_greategret","name":"Great Egret","tier":"uncommon","group":"water","idDiff":0.6,"audio":false},{"id":"bo_wedgetailedeagle","name":"Wedge-tailed Eagle","tier":"uncommon","group":"raptor","idDiff":0.65,"audio":false},{"id":"bo_hoaryheadedgrebe","name":"Hoary-headed Grebe","tier":"uncommon","group":"water","idDiff":0.5,"audio":false},{"id":"bo_greatcrestedgrebe","name":"Great Crested Grebe","tier":"rare","group":"water","idDiff":0.4,"audio":false},{"id":"bo_royalspoonbill","name":"Royal Spoonbill","tier":"uncommon","group":"water","idDiff":0.55,"audio":false},{"id":"bo_pelican","name":"Australian Pelican","tier":"uncommon","group":"water","idDiff":0.65,"audio":false},{"id":"bo_bittern","name":"Australasian Bittern","tier":"rare","group":"water","idDiff":0.35,"audio":true},{"id":"bo_freckledduck","name":"Freckled Duck","tier":"mega","group":"water","idDiff":0.3,"audio":false},{"id":"bo_pinkeared","name":"Pink-eared Duck","tier":"rare","group":"water","idDiff":0.4,"audio":false},{"id":"bo_sharptailedsandpiper","name":"Sharp-tailed Sandpiper","tier":"rare","group":"water","idDiff":0.35,"audio":false},{"id":"bo_curlewsandpiper","name":"Curlew Sandpiper","tier":"rare","group":"water","idDiff":0.35,"audio":false},{"id":"bo_blacktailedgodwit","name":"Black-tailed Godwit","tier":"rare","group":"water","idDiff":0.35,"audio":false},{"id":"bo_marshsandpiper","name":"Marsh Sandpiper","tier":"rare","group":"water","idDiff":0.35,"audio":false},{"id":"bo_avocet","name":"Red-necked Avocet","tier":"uncommon","group":"water","idDiff":0.5,"audio":false},{"id":"bo_bandedstilt","name":"Banded Stilt","tier":"rare","group":"water","idDiff":0.4,"audio":false},{"id":"bo_blackfalcon","name":"Black Falcon","tier":"rare","group":"raptor","idDiff":0.35,"audio":false},{"id":"bo_littleeagle","name":"Little Eagle","tier":"rare","group":"raptor","idDiff":0.4,"audio":false},{"id":"bo_swampharrier","name":"Swamp Harrier","tier":"uncommon","group":"raptor","idDiff":0.55,"audio":false},{"id":"bo_seaeagle","name":"White-bellied Sea-Eagle","tier":"rare","group":"raptor","idDiff":0.4,"audio":false}],"loopOptions":["quick","short","medium","extended"]},{"id":"mullingerswampcp","name":"Backwater Swamp","hotspot":"Mullinger Swamp Conservation Park","size":"standard","zone":"inland","hide":false,"hub":false,"wet":true,"blurb":"Backwater swamp behind the highway — good numbers of common waterfowl and honeyeaters, with raptors quartering the paddocks around it.","species":[{"id":"ms_shelduck","name":"Australian Shelduck","tier":"common","group":"water","idDiff":0.85,"audio":false},{"id":"ms_maneduck","name":"Maned Duck","tier":"common","group":"water","idDiff":0.85,"audio":false},{"id":"ms_pbduck","name":"Pacific Black Duck","tier":"common","group":"water","idDiff":0.85,"audio":false},{"id":"ms_greyteal","name":"Grey Teal","tier":"common","group":"water","idDiff":0.85,"audio":false},{"id":"ms_nativehen","name":"Black-tailed Nativehen","tier":"uncommon","group":"water","idDiff":0.6,"audio":false},{"id":"ms_dotterel","name":"Black-fronted Dotterel","tier":"uncommon","group":"water","idDiff":0.55,"audio":false},{"id":"ms_lapwing","name":"Masked Lapwing","tier":"common","group":"water","idDiff":0.85,"audio":false},{"id":"ms_coot","name":"Eurasian Coot","tier":"common","group":"water","idDiff":0.82,"audio":false},{"id":"ms_magpie","name":"Australian Magpie","tier":"common","group":"bush","idDiff":0.92,"audio":false},{"id":"ms_fairywren","name":"Superb Fairywren","tier":"common","group":"bush","idDiff":0.82,"audio":false},{"id":"ms_treecreeperwhite","name":"White-throated Treecreeper","tier":"uncommon","group":"bush","idDiff":0.6,"audio":false},{"id":"ms_treecreeperbrown","name":"Brown Treecreeper","tier":"uncommon","group":"bush","idDiff":0.55,"audio":false},{"id":"ms_bluefacedhoneyeater","name":"Blue-faced Honeyeater","tier":"rare","group":"bush","idDiff":0.45,"audio":false},{"id":"ms_noisyminer","name":"Noisy Miner","tier":"uncommon","group":"bush","idDiff":0.7,"audio":false},{"id":"ms_purplecrownedlorikeet","name":"Purple-crowned Lorikeet","tier":"uncommon","group":"bush","idDiff":0.55,"audio":false},{"id":"ms_yellowbilledspoonbill","name":"Yellow-billed Spoonbill","tier":"uncommon","group":"water","idDiff":0.55,"audio":false},{"id":"ms_blackkite","name":"Black Kite","tier":"rare","group":"raptor","idDiff":0.4,"audio":false},{"id":"ms_whistlingkite","name":"Whistling Kite","tier":"uncommon","group":"raptor","idDiff":0.6,"audio":false},{"id":"ms_wedgetailedeagle","name":"Wedge-tailed Eagle","tier":"uncommon","group":"raptor","idDiff":0.65,"audio":false},{"id":"ms_littleeagle","name":"Little Eagle","tier":"rare","group":"raptor","idDiff":0.4,"audio":false},{"id":"ms_browngoshawk","name":"Brown Goshawk","tier":"uncommon","group":"raptor","idDiff":0.55,"audio":false},{"id":"ms_kingfisher","name":"Sacred Kingfisher","tier":"uncommon","group":"bush","idDiff":0.6,"audio":false},{"id":"ms_flycatcherrestless","name":"Restless Flycatcher","tier":"rare","group":"bush","idDiff":0.45,"audio":false},{"id":"ms_woodswallowdusky","name":"Dusky Woodswallow","tier":"uncommon","group":"bush","idDiff":0.55,"audio":false},{"id":"ms_pelican","name":"Australian Pelican","tier":"uncommon","group":"water","idDiff":0.65,"audio":false},{"id":"ms_darter","name":"Australasian Darter","tier":"rare","group":"water","idDiff":0.4,"audio":false},{"id":"ms_nightheron","name":"Nankeen Night Heron","tier":"rare","group":"water","idDiff":0.45,"audio":false},{"id":"ms_swampharrier","name":"Swamp Harrier","tier":"uncommon","group":"raptor","idDiff":0.55,"audio":false},{"id":"ms_frogmouth","name":"Tawny Frogmouth","tier":"uncommon","group":"nocturnal","idDiff":0.55,"audio":true},{"id":"ms_boobook","name":"Australian Boobook","tier":"rare","group":"nocturnal","idDiff":0.5,"audio":true},{"id":"ms_seaeagle","name":"White-bellied Sea-Eagle","tier":"rare","group":"raptor","idDiff":0.4,"audio":false},{"id":"ms_pinkeared","name":"Pink-eared Duck","tier":"rare","group":"water","idDiff":0.4,"audio":false}],"loopOptions":["quick","short"]}];
+
+function newLocationId(base){
+  base = slug(base) || "newlocation";
+  var id = base, n = 2;
+  while(state.sites.some(function(s){ return s.id===id; })){ id = base + n; n++; }
+  return id;
+}
+function newSpeciesId(locId, name){
+  var base = slug(locId) + "_" + (slug(name) || "species");
+  var id = base, n = 2;
+  var allIds = {};
+  state.sites.forEach(function(s){ s.species.forEach(function(sp){ allIds[sp.id]=1; }); });
+  while(allIds[id]){ id = base + n; n++; }
+  return id;
+}
+
+var state = {
+  sites: clone(DEFAULT_SITES),
+  selectedId: (DEFAULT_SITES[0] || {}).id || null
+};
+
+function selectedSite(){
+  return state.sites.filter(function(s){ return s.id===state.selectedId; })[0] || null;
+}
+
+/* ---- validation ---- */
+function validate(){
+  var issues = [];
+  var idCounts = {};
+  state.sites.forEach(function(s){ idCounts[s.id] = (idCounts[s.id]||0)+1; });
+  Object.keys(idCounts).forEach(function(id){ if(idCounts[id]>1) issues.push({level:"error", msg:"Location id \"" + id + "\" is used " + idCounts[id] + " times — ids must be unique."}); });
+  state.sites.forEach(function(s){
+    if(!/^[a-z][a-z0-9]*$/.test(s.id)) issues.push({level:"warn", msg:"Location \"" + (s.name||s.id) + "\" has id \"" + s.id + "\" — lowercase letters and digits only, starting with a letter, keeps it safe to paste into the game as-is."});
+    if(!s.species.length) issues.push({level:"warn", msg:"\"" + (s.name||s.id) + "\" has no species yet."});
+  });
+  var hubs = state.sites.filter(function(s){ return s.hub; });
+  if(hubs.length===0 && state.sites.length) issues.push({level:"warn", msg:"No location is flagged as the hub/camp site — the game falls back to the first location in the list, but pick one explicitly so it's clearly camp."});
+  if(hubs.length>1) issues.push({level:"error", msg:"More than one location is flagged as the hub/camp site: " + hubs.map(function(s){return s.name;}).join(", ") + ". Only one camp is supported."});
+  var spIdCounts = {};
+  state.sites.forEach(function(s){ s.species.forEach(function(sp){ spIdCounts[sp.id] = (spIdCounts[sp.id]||0)+1; }); });
+  Object.keys(spIdCounts).forEach(function(id){ if(spIdCounts[id]>1) issues.push({level:"error", msg:"Species id \"" + id + "\" is used " + spIdCounts[id] + " times across the location list — species ids must be globally unique (the game tracks confirmed sightings by id)."}); });
+  state.sites.forEach(function(s){
+    s.species.forEach(function(sp){
+      if(TIER_OPTIONS.indexOf(sp.tier)<0) issues.push({level:"error", msg:"\"" + sp.name + "\" (" + sp.id + ") has an invalid tier \"" + sp.tier + "\"."});
+      if(GROUP_OPTIONS.indexOf(sp.group)<0) issues.push({level:"error", msg:"\"" + sp.name + "\" (" + sp.id + ") has an invalid group \"" + sp.group + "\"."});
+      if(!(sp.idDiff>=0 && sp.idDiff<=1)) issues.push({level:"warn", msg:"\"" + sp.name + "\" (" + sp.id + ") has an idDiff of " + sp.idDiff + " — expected 0–1."});
+    });
+  });
+  return issues;
+}
+
+/* ---- location list ---- */
+function renderLocationList(){
+  var wrap = document.getElementById("locList");
+  if(!state.sites.length){
+    wrap.innerHTML = '<p class="empty">No locations yet — add one to get started, or import a SITES block.</p>';
+    document.getElementById("locCountLabel").textContent = "";
+    return;
+  }
+  document.getElementById("locCountLabel").textContent = "(" + state.sites.length + ")";
+  wrap.innerHTML = state.sites.map(function(s){
+    var badges = "";
+    if(s.hub) badges += '<span class="badge hub">hub</span>';
+    if(s.zone==="coastal") badges += '<span class="badge">coastal</span>';
+    if(s.hide) badges += '<span class="badge">hide</span>';
+    if(s.wet) badges += '<span class="badge">wet</span>';
+    var active = s.id===state.selectedId ? " active" : "";
+    return '<div class="locrow' + active + '" data-loc-id="' + esc(s.id) + '">' +
+      '<span class="name">' + esc(s.name || "(untitled)") + '</span>' +
+      '<span class="badges">' + badges + '</span>' +
+      '<span class="count-sp">' + s.species.length + '&nbsp;sp</span>' +
+    '</div>';
+  }).join("");
+  Array.prototype.forEach.call(wrap.querySelectorAll("[data-loc-id]"), function(row){
+    row.addEventListener("click", function(){
+      state.selectedId = row.getAttribute("data-loc-id");
+      renderAll();
+    });
+  });
+}
+
+/* ---- stats + warnings ---- */
+function renderWarnings(){
+  var issues = validate();
+  var box = document.getElementById("warnPanel");
+  if(!issues.length){
+    box.innerHTML = state.sites.length ? '<div class="warnbox ok">Looks good — no issues found.</div>' : "";
+    return;
+  }
+  var errors = issues.filter(function(i){ return i.level==="error"; });
+  var warns = issues.filter(function(i){ return i.level==="warn"; });
+  box.innerHTML = '<div class="warnbox">' +
+    '<b>' + (errors.length ? errors.length + " issue" + (errors.length===1?"":"s") + " to fix" : "Notes") + (warns.length ? (errors.length?", ":"") + warns.length + " to consider" : "") + '</b>' +
+    '<ul>' + issues.map(function(i){ return '<li>' + (i.level==="error" ? "&#9888; " : "") + esc(i.msg) + '</li>'; }).join("") + '</ul>' +
+  '</div>';
+}
+function updateStats(){
+  var spCount = state.sites.reduce(function(a,s){ return a + s.species.length; }, 0);
+  document.getElementById("statLocations").textContent = state.sites.length;
+  document.getElementById("statSpecies").textContent = spCount;
+  var hub = state.sites.filter(function(s){ return s.hub; })[0];
+  document.getElementById("statHub").textContent = hub ? hub.name : "none set";
+}
+
+/* ---- editor panel ---- */
+function fieldRow(label, inputHtml){
+  return '<div class="field"><label class="fieldlabel">' + label + '</label>' + inputHtml + '</div>';
+}
+function optionsHtml(options, current){
+  return options.map(function(o){ return '<option value="' + o + '"' + (o===current?" selected":"") + '>' + o + '</option>'; }).join("");
+}
+function speciesRowHtml(sp){
+  return '<tr data-sp-id="' + esc(sp.id) + '">' +
+    '<td><input class="mono idcell" type="text" data-field="id" value="' + esc(sp.id) + '"></td>' +
+    '<td><input class="namecell" type="text" data-field="name" value="' + esc(sp.name) + '"></td>' +
+    '<td><select data-field="tier">' + optionsHtml(TIER_OPTIONS, sp.tier) + '</select></td>' +
+    '<td><select data-field="group">' + optionsHtml(GROUP_OPTIONS, sp.group) + '</select></td>' +
+    '<td><input class="iddiffcell" type="number" min="0" max="1" step="0.01" data-field="idDiff" value="' + sp.idDiff + '"></td>' +
+    '<td><input type="checkbox" data-field="audio"' + (sp.audio?" checked":"") + '></td>' +
+    '<td><button class="rowremove" data-remove-sp title="Remove species" aria-label="Remove species">&times;</button></td>' +
+  '</tr>';
+}
+function editorHtml(s){
+  if(!s) return '<div class="empty">Select a location on the left, or add a new one, to start editing.</div>';
+  var loopChecks = LOOP_OPTIONS.map(function(o){
+    var checked = s.loopOptions && s.loopOptions.indexOf(o)>=0;
+    return '<label><input type="checkbox" data-loop-opt="' + o + '"' + (checked?" checked":"") + '> ' + o + '</label>';
+  }).join("");
+  return (
+    '<div class="fieldrow">' +
+      fieldRow("Location id", '<input class="mono" type="text" id="f_id" value="' + esc(s.id) + '">') +
+      fieldRow("Display name (in-game, casual)", '<input type="text" id="f_name" value="' + esc(s.name) + '">') +
+    '</div>' +
+    fieldRow("Real eBird hotspot name (kept as a source-tracing note, not shown in-game)", '<input type="text" id="f_hotspot" value="' + esc(s.hotspot||"") + '">') +
+    '<div class="fieldrow">' +
+      fieldRow("Size", '<select id="f_size">' + optionsHtml(SIZE_OPTIONS, s.size) + '</select>') +
+      fieldRow("Zone", '<select id="f_zone">' + optionsHtml(ZONE_OPTIONS, s.zone) + '</select>') +
+    '</div>' +
+    ebirdPanelHtml(s) +
+    '<div class="checks">' +
+      '<label class="checkline"><input type="checkbox" id="f_hub"' + (s.hub?" checked":"") + '> Hub / camp site (exactly one)</label>' +
+      '<label class="checkline"><input type="checkbox" id="f_hide"' + (s.hide?" checked":"") + '> Has a hide/blind (unlocks the watch-from-hide option)</label>' +
+      '<label class="checkline"><input type="checkbox" id="f_wet"' + (s.wet?" checked":"") + '> Open water (morning mist hurts water-bird sightings here)</label>' +
+    '</div>' +
+    fieldRow("Blurb (flavor text shown in-game)", '<textarea id="f_blurb" rows="2">' + esc(s.blurb||"") + '</textarea>') +
+    fieldRow("Loop options (optional — leave all unchecked to use the size-based default)", '<div class="loopchecks">' + loopChecks + '</div>') +
+    '<div style="display:flex;gap:8px;margin-top:4px;">' +
+      '<button id="dupLocBtn">Duplicate location</button>' +
+      '<button id="delLocBtn" class="danger">Delete location</button>' +
+    '</div>' +
+    '<h2 style="margin-top:14px;">Species <span class="count">(' + s.species.length + ')</span></h2>' +
+    '<div class="sptable-wrap"><table class="sptable">' +
+      '<thead><tr><th>Id</th><th>Name</th><th>Tier</th><th>Group</th><th>idDiff</th><th>Audio</th><th></th></tr></thead>' +
+      '<tbody id="spTbody">' + s.species.map(speciesRowHtml).join("") + '</tbody>' +
+    '</table></div>' +
+    '<div class="addspecies">' +
+      '<div class="field"><label class="fieldlabel">New species name</label><input type="text" id="newSpName" placeholder="e.g. Superb Fairywren"></div>' +
+      '<div class="field"><label class="fieldlabel">Tier</label><select id="newSpTier">' + optionsHtml(TIER_OPTIONS, "common") + '</select></div>' +
+      '<div class="field"><label class="fieldlabel">Group</label><select id="newSpGroup">' + optionsHtml(GROUP_OPTIONS, "bush") + '</select></div>' +
+      '<div class="field" style="max-width:90px;"><label class="fieldlabel">idDiff</label><input type="number" id="newSpIdDiff" min="0" max="1" step="0.01" value="0.7"></div>' +
+      '<label class="checkline"><input type="checkbox" id="newSpAudio"> Audio-only</label>' +
+      '<button id="addSpBtn" class="primary">+ Add species</button>' +
+    '</div>'
+  );
+}
+function bindEditorEvents(){
+  var s = selectedSite();
+  if(!s) return;
+  function byId(id){ return document.getElementById(id); }
+
+  byId("f_id").addEventListener("input", function(e){
+    var v = slug(e.target.value) || s.id;
+    s.id = v; state.selectedId = v;
+    syncOnly();
+  });
+  byId("f_name").addEventListener("input", function(e){ s.name = e.target.value; syncOnly(); });
+  byId("f_hotspot").addEventListener("input", function(e){ s.hotspot = e.target.value; syncOnly(); });
+  byId("f_size").addEventListener("change", function(e){ s.size = e.target.value; syncOnly(); });
+  byId("f_zone").addEventListener("change", function(e){ s.zone = e.target.value; syncOnly(); });
+  byId("f_hide").addEventListener("change", function(e){ s.hide = e.target.checked; syncOnly(); });
+  byId("f_wet").addEventListener("change", function(e){ s.wet = e.target.checked; syncOnly(); });
+  byId("f_hub").addEventListener("change", function(e){
+    var checked = e.target.checked;
+    if(checked) state.sites.forEach(function(other){ other.hub = (other===s); });
+    else s.hub = false;
+    renderAll();
+  });
+  byId("f_blurb").addEventListener("input", function(e){ s.blurb = e.target.value; syncOnly(); });
+  Array.prototype.forEach.call(document.querySelectorAll("[data-loop-opt]"), function(cb){
+    cb.addEventListener("change", function(){
+      var opts = Array.prototype.filter.call(document.querySelectorAll("[data-loop-opt]"), function(c){ return c.checked; })
+        .map(function(c){ return c.getAttribute("data-loop-opt"); });
+      s.loopOptions = opts.length ? opts : null;
+      syncOnly();
+    });
+  });
+
+  byId("dupLocBtn").addEventListener("click", function(){
+    var copy = clone(s);
+    copy.id = newLocationId(s.id + "copy");
+    copy.name = s.name + " (copy)";
+    copy.hub = false;
+    copy.ebirdLocId = null;
+    var usedSpIds = {};
+    state.sites.forEach(function(site){ site.species.forEach(function(sp){ usedSpIds[sp.id]=1; }); });
+    copy.species = copy.species.map(function(sp){
+      var base = copy.id + "_" + slug(sp.name), id = base, n = 2;
+      while(usedSpIds[id]){ id = base + n; n++; }
+      usedSpIds[id] = 1;
+      return { id:id, name:sp.name, tier:sp.tier, group:sp.group, idDiff:sp.idDiff, audio:sp.audio };
+    });
+    var idx = state.sites.indexOf(s);
+    state.sites.splice(idx+1, 0, copy);
+    state.selectedId = copy.id;
+    renderAll();
+  });
+  byId("delLocBtn").addEventListener("click", function(){
+    if(!window.confirm('Delete "' + (s.name||s.id) + '" and all ' + s.species.length + ' of its species? This cannot be undone here.')) return;
+    var idx = state.sites.indexOf(s);
+    state.sites.splice(idx,1);
+    state.selectedId = state.sites.length ? state.sites[Math.min(idx, state.sites.length-1)].id : null;
+    renderAll();
+  });
+
+  Array.prototype.forEach.call(byId("spTbody").querySelectorAll("tr"), function(tr){
+    var spId = tr.getAttribute("data-sp-id");
+    var sp = s.species.filter(function(x){ return x.id===spId; })[0];
+    if(!sp) return;
+    tr.querySelectorAll("[data-field]").forEach(function(el){
+      var field = el.getAttribute("data-field");
+      var evt = (el.tagName==="SELECT" || el.type==="checkbox") ? "change" : "input";
+      el.addEventListener(evt, function(){
+        if(field==="idDiff") sp.idDiff = clamp(parseFloat(el.value)||0, 0, 1);
+        else if(field==="audio") sp.audio = el.checked;
+        else if(field==="id") sp.id = slug(el.value) || sp.id;
+        else sp[field] = el.value;
+        syncOnly();
+      });
+    });
+    var rm = tr.querySelector("[data-remove-sp]");
+    rm.addEventListener("click", function(){
+      s.species = s.species.filter(function(x){ return x.id!==spId; });
+      renderAll();
+    });
+  });
+
+  byId("addSpBtn").addEventListener("click", function(){
+    var name = byId("newSpName").value.trim();
+    if(!name){ byId("newSpName").focus(); return; }
+    var newSp = {
+      id: newSpeciesId(s.id, name),
+      name: name,
+      tier: byId("newSpTier").value,
+      group: byId("newSpGroup").value,
+      idDiff: clamp(parseFloat(byId("newSpIdDiff").value)||0.5, 0, 1),
+      audio: byId("newSpAudio").checked
+    };
+    s.species.push(newSp);
+    renderAll();
+  });
+
+  bindEbirdPanelEvents(s);
+}
+
+/* ---- top-level render orchestration ---- */
+function renderEditor(){
+  document.getElementById("editorPanel").innerHTML = editorHtml(selectedSite());
+  bindEditorEvents();
+}
+function syncOnly(){
+  renderLocationList();
+  updateStats();
+  renderWarnings();
+  updateExports();
+  saveSnapshot();
+}
+function renderAll(){
+  renderLocationList();
+  renderEditor();
+  updateStats();
+  renderWarnings();
+  updateExports();
+  saveSnapshot();
+}
+/* ---- import ---- */
+function findObjectLiteral(text, anchorRe){
+  var m = anchorRe.exec(text);
+  if(!m) return null;
+  var start = text.indexOf("{", m.index);
+  if(start<0) return null;
+  var depth=0, inStr=null, inLineComment=false, inBlockComment=false;
+  for(var i=start; i<text.length; i++){
+    var c = text[i], prev = i>0 ? text[i-1] : "";
+    if(inLineComment){ if(c==="\n") inLineComment=false; continue; }
+    if(inBlockComment){ if(c==="/" && prev==="*") inBlockComment=false; continue; }
+    if(inStr){ if(c===inStr && prev!=="\\") inStr=null; continue; }
+    if(c==="/" && text[i+1]==="/"){ inLineComment=true; continue; }
+    if(c==="/" && text[i+1]==="*"){ inBlockComment=true; continue; }
+    if(c==='"' || c==="'" || c==="`"){ inStr=c; continue; }
+    if(c==="{"){ depth++; }
+    else if(c==="}"){ depth--; if(depth===0) return text.slice(start, i+1); }
+  }
+  return null;
+}
+function parseSitesBlockFull(text){
+  text = (text||"").trim();
+  if(!text) throw new Error("Paste a SITES block first.");
+  var objText = findObjectLiteral(text, /\bSITES\s*=/) || findObjectLiteral(text, /^/);
+  if(!objText) throw new Error("Couldn't find an object literal in that text.");
+  var spImpl = function(id,name,tier,group,idDiff,audio){ return {id:id,name:name,tier:tier,group:group,idDiff:idDiff,audio:!!audio}; };
+  var obj;
+  try{
+    obj = (new Function("sp", "return (" + objText + ");"))(spImpl);
+  }catch(e){
+    throw new Error("Couldn't read that as a SITES block: " + e.message);
+  }
+  var keys = Object.keys(obj||{});
+  if(!keys.length) throw new Error("No locations found in that text.");
+  var hotspotById = {};
+  var re = /id\s*:\s*"([^"]+)"[^\n]*?\/\*\s*eBird hotspot:\s*([^*]+?)\s*\*\//g, mm;
+  while((mm = re.exec(text))) hotspotById[mm[1]] = mm[2].trim();
+  var loopText = findObjectLiteral(text, /siteLoopOptions\s*:/);
+  var loopObj = {};
+  if(loopText){ try{ loopObj = (new Function("return (" + loopText + ");"))() || {}; }catch(e){ loopObj = {}; } }
+  return keys.map(function(key){
+    var s = obj[key] || {};
+    var id = s.id || key;
+    return {
+      id: id,
+      name: s.name || id,
+      hotspot: hotspotById[id] || "",
+      size: SIZE_OPTIONS.indexOf(s.size)>=0 ? s.size : "standard",
+      zone: s.zone==="coastal" ? "coastal" : "inland",
+      hide: !!s.hide,
+      hub: !!s.hub,
+      wet: !!s.wet,
+      blurb: s.blurb || "",
+      loopOptions: Array.isArray(loopObj[id]) ? loopObj[id] : null,
+      ebirdLocId: null,
+      species: Array.isArray(s.species) ? s.species.map(function(sp){
+        return {
+          id: sp.id || (id + "_" + slug(sp.name)),
+          name: sp.name || "",
+          tier: TIER_OPTIONS.indexOf(sp.tier)>=0 ? sp.tier : "common",
+          group: GROUP_OPTIONS.indexOf(sp.group)>=0 ? sp.group : "bush",
+          idDiff: (typeof sp.idDiff==="number") ? sp.idDiff : 0.5,
+          audio: !!sp.audio
+        };
+      }) : []
+    };
+  });
+}
+
+/* ---- export ---- */
+function jsStr(v){ return JSON.stringify(String(v==null?"":v)); }
+function formatSpecies(sp){
+  var args = [jsStr(sp.id), jsStr(sp.name), jsStr(sp.tier), jsStr(sp.group), sp.idDiff];
+  if(sp.audio) args.push("true");
+  return "sp(" + args.join(",") + ")";
+}
+function formatSite(s){
+  var lines = [];
+  lines.push("  " + s.id + ": {");
+  var hotspotComment = s.hotspot ? " /* eBird hotspot: " + s.hotspot.replace(/\*\//g,"* /") + " */" : "";
+  lines.push("    id:" + jsStr(s.id) + ", name:" + jsStr(s.name) + "," + hotspotComment + " size:" + jsStr(s.size) + ", zone:" + jsStr(s.zone) + ", hide:" + !!s.hide + ", hub:" + !!s.hub + ", wet:" + !!s.wet + ",");
+  lines.push("    blurb:" + jsStr(s.blurb) + ",");
+  if(s.species.length){
+    lines.push("    species:[");
+    lines.push(s.species.map(function(sp){ return "      " + formatSpecies(sp) + ","; }).join("\n").replace(/,$/,""));
+    lines.push("    ]");
+  } else {
+    lines.push("    species:[]");
+  }
+  lines.push("  }");
+  return lines.join("\n");
+}
+function updateExports(){
+  var sitesCode = "var SITES = {\n" + state.sites.map(formatSite).join(",\n") + "\n};";
+  document.getElementById("sitesExport").value = sitesCode;
+
+  var withLoop = state.sites.filter(function(s){ return s.loopOptions && s.loopOptions.length; });
+  var wrap = document.getElementById("loopExportWrap");
+  if(withLoop.length){
+    var loopCode = "/* Paste these keys into CONFIG.siteLoopOptions in index.html (merge with\n   whatever's already there — every other site keeps the by-size default). */\n" +
+      withLoop.map(function(s){ return "  " + s.id + ": [" + s.loopOptions.map(jsStr).join(",") + "],"; }).join("\n");
+    document.getElementById("loopExport").value = loopCode;
+    wrap.hidden = false;
+  } else {
+    wrap.hidden = true;
+    document.getElementById("loopExport").value = "";
+  }
+}
+
+/* ---- eBird integration ----
+   Everything here runs client-side, straight from this page to
+   api.ebird.org — there's no server in this project to proxy through.
+   eBird's API does allow this (confirmed: their responses carry the CORS
+   headers a browser needs), but it does mean the API key lives in this
+   page's memory and localStorage, and travels in a request header on every
+   call. That's the same trust model as any other browser-only API key —
+   fine for a personal tool, just don't build a public page around it
+   without hiding the key behind a server first. */
+var EBIRD_KEY_STORAGE = "twitchathon_location_editor_ebird_key";
+function getEbirdKey(){ try{ return (localStorage.getItem(EBIRD_KEY_STORAGE) || "").trim(); }catch(e){ return ""; } }
+function setEbirdKey(k){ try{ localStorage.setItem(EBIRD_KEY_STORAGE, k); }catch(e){} }
+
+function ebirdGet(url){
+  var key = getEbirdKey();
+  if(!key) return Promise.reject(new Error("Add your eBird API key above first (it's free — ebird.org/api/keygen)."));
+  return fetch(url, { headers: { "X-eBirdApiToken": key } }).then(function(r){
+    if(r.status===403) return Promise.reject(new Error("eBird rejected that API key (403). Double-check it at ebird.org/api/keygen."));
+    if(r.status===404) return Promise.reject(new Error("eBird returned \"not found\" for that id/region — double-check it."));
+    if(!r.ok) return Promise.reject(new Error("eBird request failed (HTTP " + r.status + ")."));
+    return r.json();
+  });
+}
+function ebirdHotspotInfo(locId){ return ebirdGet("https://api.ebird.org/v2/ref/hotspot/info/" + encodeURIComponent(locId) + "?fmt=json"); }
+function ebirdSpeciesList(locId){ return ebirdGet("https://api.ebird.org/v2/product/spplist/" + encodeURIComponent(locId)); }
+function ebirdRecent(locId){ return ebirdGet("https://api.ebird.org/v2/data/obs/" + encodeURIComponent(locId) + "/recent?back=30"); }
+function ebirdNotable(locId){ return ebirdGet("https://api.ebird.org/v2/data/obs/" + encodeURIComponent(locId) + "/recent/notable?back=30"); }
+function ebirdTaxonomyBatch(codes){ return ebirdGet("https://api.ebird.org/v2/ref/taxonomy/ebird?fmt=json&species=" + codes.map(encodeURIComponent).join(",")); }
+function ebirdNearbyHotspots(lat,lng,distKm){ return ebirdGet("https://api.ebird.org/v2/ref/hotspot/geo?fmt=json&lat=" + encodeURIComponent(lat) + "&lng=" + encodeURIComponent(lng) + "&dist=" + encodeURIComponent(distKm)); }
+function ebirdRegionHotspots(regionCode){ return ebirdGet("https://api.ebird.org/v2/ref/hotspot/" + encodeURIComponent(regionCode) + "?fmt=json"); }
+
+async function ebirdFetchAllTaxonomy(codes){
+  var out = {}, uniq = Array.from(new Set(codes)), chunkSize = 100;
+  for(var i=0; i<uniq.length; i+=chunkSize){
+    var rows = await ebirdTaxonomyBatch(uniq.slice(i, i+chunkSize));
+    rows.forEach(function(row){ out[row.speciesCode] = row; });
+  }
+  return out;
+}
+
+/* Rough family -> group mapping so a fetched species doesn't default to
+   "bush" across the board. Matched against eBird's human-readable
+   familyComName by substring, so it's tolerant of the exact wording.
+   Anything unmatched (the vast majority of landbirds) falls through to
+   "bush", same as the hand-curated South Australian data. */
+var EBIRD_NOCTURNAL_FAMILIES = ["Owls","Nightjars","Frogmouths","Owlet-Nightjars","Potoos"];
+var EBIRD_RAPTOR_FAMILIES = ["Hawks, Eagles","Kites,","Ospreys","Falcons, Caracaras","New World Vultures","Old World Vultures","Secretarybird"];
+var EBIRD_WATER_FAMILIES = ["Ducks, Geese","Swans","Grebes","Loons","Cormorants","Anhingas","Pelicans","Herons, Egrets","Bitterns","Ibises, Spoonbills","Rails, Gallinules","Cranes","Limpkin","Stilts, Avocets","Oystercatchers","Plovers","Sandpipers","Painted-Snipes","Jacanas","Thick-knees","Gulls, Terns","Skimmers","Jaegers, Skuas","Auks, Murres","Tropicbirds","Frigatebirds","Boobies, Gannets","Storks","Flamingos"];
+function ebirdGroupForFamily(familyComName){
+  var f = String(familyComName||"");
+  function has(list){ return list.some(function(s){ return f.indexOf(s)>=0; }); }
+  if(has(EBIRD_NOCTURNAL_FAMILIES)) return "nocturnal";
+  if(has(EBIRD_RAPTOR_FAMILIES)) return "raptor";
+  if(has(EBIRD_WATER_FAMILIES)) return "water";
+  return "bush";
+}
+var EBIRD_TIER_IDDIFF = { common:0.85, uncommon:0.60, rare:0.45, mega:0.35 };
+
+/* A real hotspot's all-time list can easily run past 200-300 species —
+   more than a weekend site needs, and a lot to hand-review. EBIRD_TARGET_TIER_PCT
+   is the rough tier mix to aim for when trimming down to a cap, taken from
+   the average of the game's own hand-curated South Australian sites (about
+   a quarter common, just under half uncommon, just over a quarter rare).
+   Mega is deliberately left out of the split below: whatever mega-tier
+   species are already present (from a prior manual edit, or a merge) are
+   always kept in full rather than being subject to the cap, since there
+   are usually only one or two and they're the whole point of a "mega". */
+var EBIRD_TARGET_TIER_PCT = { rare:0.28, uncommon:0.47, common:0.25 };
+
+/* Picks n entries spread evenly across arr's whole span (first and last
+   included) rather than just truncating the front of the list — arr here
+   is usually in eBird's taxonomic order, so a plain truncate would keep
+   only whichever families happen to come first and lose the rest outright. */
+function pickSpread(arr, n){
+  n = Math.max(0, Math.min(n, arr.length));
+  if(n===0) return [];
+  if(n>=arr.length) return arr.slice();
+  var out = [], seen = {};
+  for(var i=0;i<n;i++){
+    var idx = Math.min(arr.length-1, Math.round(i*(arr.length-1)/Math.max(1,n-1)));
+    if(!seen[idx]){ seen[idx]=1; out.push(arr[idx]); }
+  }
+  for(var j=0; out.length<n && j<arr.length; j++){ if(!seen[j]){ seen[j]=1; out.push(arr[j]); } }
+  return out;
+}
+
+/* Trims a list of freshly-pulled species down to at most maxTotal, keeping
+   every "mega", then splitting what's left across rare/uncommon/common by
+   EBIRD_TARGET_TIER_PCT (redistributing any shortfall from a thin tier to
+   the others so the cap is still hit when one tier doesn't have enough).
+   A no-op whenever the list is already at or under the cap — this only
+   bites in the "extreme", very-long-list case. */
+function trimSpeciesToTarget(speciesList, maxTotal){
+  if(!maxTotal || speciesList.length<=maxTotal) return speciesList;
+  var byTier = { mega:[], rare:[], uncommon:[], common:[] };
+  speciesList.forEach(function(sp){ (byTier[sp.tier] || byTier.uncommon).push(sp); });
+  var keepMega = byTier.mega;
+  var remaining = Math.max(0, maxTotal - keepMega.length);
+  var tiers = ["rare","uncommon","common"];
+  var desired = {};
+  tiers.forEach(function(t){ desired[t] = Math.round(remaining * EBIRD_TARGET_TIER_PCT[t]); });
+  desired.uncommon += remaining - (desired.rare + desired.uncommon + desired.common); // absorb rounding drift
+  var take = {}, used = 0;
+  tiers.forEach(function(t){ take[t] = Math.min(desired[t], byTier[t].length); used += take[t]; });
+  var leftover = remaining - used, guard = 0;
+  while(leftover>0 && guard<10){
+    guard++;
+    var progressed = false;
+    tiers.forEach(function(t){
+      var spare = byTier[t].length - take[t];
+      if(spare>0 && leftover>0){ var grab = Math.min(spare, leftover); take[t]+=grab; leftover-=grab; progressed = true; }
+    });
+    if(!progressed) break;
+  }
+  if(byTier.rare.length>0 && take.rare===0 && take.common>0){ take.rare = 1; take.common -= 1; }
+  var kept = keepMega.slice();
+  tiers.forEach(function(t){ kept = kept.concat(pickSpread(byTier[t], take[t])); });
+  return kept;
+}
+
+/* The actual pull: hotspot info (for its real name + coords) + the all-time
+   species list + a recent (30-day) and recent/notable window used only to
+   guess a starting tier — species eBird's flagging as notable there right
+   now become "rare", anything seen in the last 30 days becomes "common",
+   everything else in the all-time list defaults to "uncommon". It's a
+   heuristic, not real frequency data (eBird's bar-chart frequencies aren't
+   in the public API), so review tiers afterwards rather than trusting them
+   blindly — same goes for group and idDiff, both guessed too. */
+async function pullFromEbird(locId, onStatus){
+  onStatus("Looking up hotspot " + locId + "…");
+  var info = await ebirdHotspotInfo(locId);
+  var name = info.locName || info.name || locId;
+  var lat = (info.lat!=null) ? info.lat : info.latitude;
+  var lng = (info.lng!=null) ? info.lng : info.longitude;
+
+  onStatus("Fetching the species list for " + name + "…");
+  var spCodesRaw = await ebirdSpeciesList(locId);
+  var spCodes = (spCodesRaw||[]).map(function(x){ return typeof x==="string" ? x : (x && x.speciesCode); }).filter(Boolean);
+  if(!spCodes.length) throw new Error("eBird doesn't have a species list for that hotspot yet.");
+
+  onStatus("Checking recent activity…");
+  var recentRows = [], notableRows = [];
+  try{ recentRows = await ebirdRecent(locId) || []; }catch(e){ /* non-fatal — tier guess just falls back */ }
+  try{ notableRows = await ebirdNotable(locId) || []; }catch(e){ /* non-fatal */ }
+  var recentCodes = {}; recentRows.forEach(function(o){ recentCodes[o.speciesCode] = 1; });
+  var notableCodes = {}; notableRows.forEach(function(o){ notableCodes[o.speciesCode] = 1; });
+
+  onStatus("Looking up common names for " + spCodes.length + " species…");
+  var tax = await ebirdFetchAllTaxonomy(spCodes);
+
+  var species = [], skipped = 0;
+  spCodes.forEach(function(code){
+    var t = tax[code];
+    if(!t || t.category!=="species"){ skipped++; return; }
+    var tier = notableCodes[code] ? "rare" : (recentCodes[code] ? "common" : "uncommon");
+    var group = ebirdGroupForFamily(t.familyComName);
+    species.push({ name: t.comName, tier: tier, group: group, idDiff: EBIRD_TIER_IDDIFF[tier], audio: group==="nocturnal" });
+  });
+  var waterFrac = species.length ? species.filter(function(sp){ return sp.group==="water"; }).length / species.length : 0;
+  return { name:name, lat:lat, lng:lng, species:species, totalFetched:spCodes.length, skipped:skipped, wetGuess: waterFrac>0.25 };
+}
+
+/* Merges freshly-pulled species into a location: skips anything already
+   present by name (so re-fetching to top up a location doesn't duplicate
+   rows), trims what's left to stay near maxTotal total species at this
+   location (see trimSpeciesToTarget — a no-op unless there's genuinely a
+   lot left over), then generates a fresh unique id per one actually added. */
+function mergeEbirdSpecies(site, pulled, maxTotal){
+  var usedIds = {};
+  state.sites.forEach(function(s){ s.species.forEach(function(sp){ usedIds[sp.id]=1; }); });
+  var existingNames = {};
+  site.species.forEach(function(sp){ existingNames[sp.name.toLowerCase()] = 1; });
+
+  var newOnes = pulled.species.filter(function(sp){ return !existingNames[sp.name.toLowerCase()]; });
+  var alreadyPresent = pulled.species.length - newOnes.length;
+  var budget = Math.max(0, (maxTotal||Infinity) - site.species.length);
+  var toAdd = trimSpeciesToTarget(newOnes, budget);
+
+  toAdd.forEach(function(sp){
+    var base = site.id + "_" + slug(sp.name), id = base, n = 2;
+    while(usedIds[id]){ id = base + n; n++; }
+    usedIds[id] = 1;
+    site.species.push({ id:id, name:sp.name, tier:sp.tier, group:sp.group, idDiff:sp.idDiff, audio:sp.audio });
+  });
+  return { added: toAdd.length, alreadyPresent: alreadyPresent, available: newOnes.length };
+}
+
+function ebirdPanelHtml(s){
+  return '<details class="panel-details" style="margin:2px 0;">' +
+    '<summary>Pull species from eBird&hellip;</summary>' +
+    '<p class="sub">Find the hotspot&rsquo;s id from its eBird URL (the <span class="mono">L123456</span> in <span class="mono">ebird.org/hotspot/L123456</span>), or search below.</p>' +
+    '<div class="fieldrow">' +
+      '<div class="field"><label class="fieldlabel">eBird hotspot id</label><input type="text" class="mono" id="f_ebirdLocId" value="' + esc(s.ebirdLocId||"") + '" placeholder="e.g. L935880"></div>' +
+    '</div>' +
+    '<details style="margin-top:4px;"><summary style="font-size:.8rem;">Find a hotspot id&hellip;</summary>' +
+      '<div class="fieldrow" style="margin-top:8px;">' +
+        '<div class="field"><label class="fieldlabel">Region code</label><input type="text" class="mono" id="ebirdRegion" placeholder="e.g. GB-ENG, US-CA-085"></div>' +
+        '<div class="field" style="max-width:150px;"><label class="fieldlabel">&nbsp;</label><button id="ebirdRegionBtn">List hotspots</button></div>' +
+      '</div>' +
+      '<div class="fieldrow">' +
+        '<div class="field"><label class="fieldlabel">Latitude, longitude</label><input type="text" class="mono" id="ebirdLatLng" placeholder="e.g. 51.5, -0.13"></div>' +
+        '<div class="field" style="max-width:100px;"><label class="fieldlabel">Radius (km)</label><input type="number" id="ebirdDist" value="15" min="1" max="50"></div>' +
+        '<div class="field" style="max-width:150px;"><label class="fieldlabel">&nbsp;</label><button id="ebirdNearbyBtn">Find nearby</button></div>' +
+      '</div>' +
+      '<div id="ebirdResults"></div>' +
+    '</details>' +
+    '<div class="fieldrow" style="margin-top:8px;">' +
+      '<div class="field" style="max-width:130px;"><label class="fieldlabel">Cap species at</label><input type="number" id="ebirdCap" value="75" min="0" max="500" step="5"></div>' +
+      '<div class="field"><label class="fieldlabel">&nbsp;</label><p class="sub" style="margin:8px 0 0;">Big hotspots can have hundreds of species on record — this keeps a location from ballooning past what a weekend site needs. 0 means no cap. Trimming keeps every mega, then spreads the rest across tiers (mostly uncommon, plus a healthy share of rares) rather than just keeping whichever species happened to come first.</p></div>' +
+    '</div>' +
+    '<div style="display:flex;gap:10px;align-items:center;margin-top:8px;flex-wrap:wrap;">' +
+      '<button id="ebirdFetchBtn" class="primary">' + (s.species.length ? "Fetch more species from this hotspot" : "Fetch species from this hotspot") + '</button>' +
+      '<span class="hint" id="ebirdMsg" style="margin:0;"></span>' +
+    '</div>' +
+  '</details>';
+}
+function renderEbirdResults(list){
+  var box = document.getElementById("ebirdResults");
+  if(!box) return;
+  if(!list.length){ box.innerHTML = '<p class="sub">No hotspots found.</p>'; return; }
+  var capped = list.slice(0, 60);
+  box.innerHTML = '<div class="loclist" style="max-height:220px;margin-top:6px;">' +
+    capped.map(function(h){
+      var name = h.locName || h.name || h.locId;
+      var sp = (h.numSpeciesAllTime!=null) ? h.numSpeciesAllTime + " sp" : "";
+      return '<div class="locrow" data-pick-locid="' + esc(h.locId) + '"><span class="name">' + esc(name) + '</span><span class="count-sp mono">' + esc(h.locId) + (sp?(" &middot; "+sp):"") + '</span></div>';
+    }).join("") +
+  '</div>' + (list.length>capped.length ? '<p class="sub">Showing the first ' + capped.length + ' of ' + list.length + ' — a narrower region code or radius will give a shorter list.</p>' : '');
+  Array.prototype.forEach.call(box.querySelectorAll("[data-pick-locid]"), function(row){
+    row.addEventListener("click", function(){
+      var idField = document.getElementById("f_ebirdLocId");
+      if(idField) idField.value = row.getAttribute("data-pick-locid");
+    });
+  });
+}
+function bindEbirdPanelEvents(s){
+  function byId(id){ return document.getElementById(id); }
+  if(!byId("f_ebirdLocId")) return;
+  byId("f_ebirdLocId").addEventListener("input", function(e){ s.ebirdLocId = e.target.value.trim(); syncOnly(); });
+
+  var regionBtn = byId("ebirdRegionBtn");
+  if(regionBtn) regionBtn.addEventListener("click", async function(){
+    var region = byId("ebirdRegion").value.trim();
+    if(!region) return;
+    regionBtn.disabled = true; regionBtn.textContent = "Listing…";
+    try{
+      var list = await ebirdRegionHotspots(region);
+      list.sort(function(a,b){ return (b.numSpeciesAllTime||0) - (a.numSpeciesAllTime||0); });
+      renderEbirdResults(list);
+    }catch(err){
+      var box = byId("ebirdResults"); if(box) box.innerHTML = '<p class="sub" style="color:var(--danger);">' + esc(err.message) + '</p>';
+    }finally{
+      regionBtn.disabled = false; regionBtn.textContent = "List hotspots";
+    }
+  });
+
+  var nearbyBtn = byId("ebirdNearbyBtn");
+  if(nearbyBtn) nearbyBtn.addEventListener("click", async function(){
+    var raw = byId("ebirdLatLng").value.trim();
+    var m = raw.match(/^(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)$/);
+    if(!m){ var box0 = byId("ebirdResults"); if(box0) box0.innerHTML = '<p class="sub" style="color:var(--danger);">Enter coordinates as "lat, lng", e.g. 51.5, -0.13.</p>'; return; }
+    var dist = clamp(parseFloat(byId("ebirdDist").value)||15, 1, 50);
+    nearbyBtn.disabled = true; nearbyBtn.textContent = "Searching…";
+    try{
+      var list = await ebirdNearbyHotspots(m[1], m[2], dist);
+      list.sort(function(a,b){ return (b.numSpeciesAllTime||0) - (a.numSpeciesAllTime||0); });
+      renderEbirdResults(list);
+    }catch(err){
+      var box = byId("ebirdResults"); if(box) box.innerHTML = '<p class="sub" style="color:var(--danger);">' + esc(err.message) + '</p>';
+    }finally{
+      nearbyBtn.disabled = false; nearbyBtn.textContent = "Find nearby";
+    }
+  });
+
+  var fetchBtn = byId("ebirdFetchBtn");
+  if(fetchBtn) fetchBtn.addEventListener("click", async function(){
+    var msg = byId("ebirdMsg");
+    var locId = byId("f_ebirdLocId").value.trim();
+    if(!locId){ msg.style.color = "var(--danger)"; msg.textContent = "Enter or pick a hotspot id first."; return; }
+    s.ebirdLocId = locId;
+    fetchBtn.disabled = true;
+    msg.style.color = "var(--ink-soft)";
+    function onStatus(t){ msg.textContent = t; }
+    try{
+      var wasEmpty = s.species.length===0;
+      var pulled = await pullFromEbird(locId, onStatus);
+      if(wasEmpty){
+        if(!s.hotspot) s.hotspot = pulled.name;
+        if(!s.name || s.name==="New Location") s.name = pulled.name;
+        s.wet = pulled.wetGuess;
+      }
+      var cap = clamp(parseFloat(byId("ebirdCap").value)||0, 0, 500);
+      var result = mergeEbirdSpecies(s, pulled, cap || Infinity);
+      var trimmedOut = result.available - result.added;
+      var successText = "Added " + result.added + " species (eBird returned " + pulled.totalFetched + (pulled.skipped ? ", " + pulled.skipped + " non-species entries skipped" : "") + (result.alreadyPresent ? ", " + result.alreadyPresent + " already here" : "") + (trimmedOut>0 ? ", " + trimmedOut + " trimmed to stay near the cap" : "") + "). Tier/group/idDiff are rough guesses — check them over.";
+      /* renderAll() rebuilds the whole editor panel (the species table
+         changed), which throws away the "msg" element captured above —
+         grab a fresh reference afterwards rather than writing to the
+         about-to-be-discarded one. */
+      renderAll();
+      var freshMsg = document.getElementById("ebirdMsg");
+      if(freshMsg){ freshMsg.style.color = "var(--accent)"; freshMsg.textContent = successText; }
+    }catch(err){
+      msg.style.color = "var(--danger)";
+      msg.textContent = err.message;
+      fetchBtn.disabled = false;
+    }
+  });
+}
+(function initEbirdKeyField(){
+  var el = document.getElementById("ebirdKey");
+  if(!el) return;
+  el.value = getEbirdKey();
+  el.addEventListener("input", function(e){ setEbirdKey(e.target.value); });
+})();
+
+/* ---- toolbar actions ---- */
+document.getElementById("addLocBtn").addEventListener("click", function(){
+  var id = newLocationId("newlocation");
+  var loc = { id:id, name:"New Location", hotspot:"", size:"standard", zone:"inland", hide:false, hub: state.sites.length===0, wet:false, blurb:"", loopOptions:null, ebirdLocId:null, species:[] };
+  state.sites.push(loc);
+  state.selectedId = id;
+  renderAll();
+});
+document.getElementById("clearAllBtn").addEventListener("click", function(){
+  if(!window.confirm("Clear every location and start a brand-new region from scratch? This cannot be undone here — copy the export first if you want to keep any of it.")) return;
+  state.sites = [];
+  state.selectedId = null;
+  renderAll();
+});
+document.getElementById("importBtn").addEventListener("click", function(){
+  var msg = document.getElementById("importMsg");
+  try{
+    var sites = parseSitesBlockFull(document.getElementById("importInput").value);
+    state.sites = sites;
+    state.selectedId = sites.length ? sites[0].id : null;
+    msg.style.color = "var(--accent)";
+    msg.textContent = "Loaded " + sites.length + " location" + (sites.length===1?"":"s") + ".";
+    renderAll();
+  }catch(err){
+    msg.style.color = "var(--danger)";
+    msg.textContent = err.message;
+  }
+});
+
+Array.prototype.forEach.call(document.querySelectorAll("[data-copy]"), function(b){
+  b.addEventListener("click", function(){
+    var ta = document.getElementById(b.getAttribute("data-copy"));
+    var text = ta.value;
+    function flash(){ var orig = b.textContent; b.textContent = "Copied!"; setTimeout(function(){ b.textContent = orig; }, 1400); }
+    function fallback(){ try{ ta.focus(); ta.select(); document.execCommand("copy"); flash(); }catch(e){} }
+    if(navigator.clipboard && navigator.clipboard.writeText){ navigator.clipboard.writeText(text).then(flash, fallback); }
+    else { fallback(); }
+  });
+});
+
+/* ---- hot snapshot, so in-progress edits survive a reconnect ---- */
+function saveSnapshot(){
+  try{
+    if(window.claude && window.claude.hot && typeof window.claude.hot.snapshot === "function"){
+      window.claude.hot.snapshot(function(){ return state; });
+    }
+  }catch(e){}
+}
+
+function boot(){
+  var data = null;
+  try{ if(window.claude && window.claude.hot && window.claude.hot.data) data = window.claude.hot.data; }catch(e){}
+  if(data && Array.isArray(data.sites)){
+    state.sites = data.sites;
+    state.selectedId = data.selectedId || (data.sites[0] || {}).id || null;
+  }
+  renderAll();
+  try{
+    if(window.claude && window.claude.hot){
+      if(typeof window.claude.hot.snapshot === "function") window.claude.hot.snapshot(function(){ return state; });
+      if(typeof window.claude.hot.ready === "function") window.claude.hot.ready();
+    }
+  }catch(e){}
+}
+
+boot();
+
+})();
+</script>
+
+</body></html>

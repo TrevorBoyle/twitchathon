@@ -2,3 +2,13 @@
 Thumbs.db
 *.log
 node_modules/
+
+# Personal API keys / secrets — never meant to be committed. The location
+# editor doesn't need one of these anyway (its eBird key lives in browser
+# localStorage, not a file), but this is here as a safety net if a local
+# secrets file ever gets added.
+*.key
+.env
+.env.*
+secrets.*
+.secrets/
