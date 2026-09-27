@@ -737,7 +737,7 @@ var SITES = {
       sp("mm_goshawk","Brown Goshawk","uncommon","raptor",0.55),
       sp("mm_heathwren","Shy Heathwren","rare","bush",0.50),
       sp("mm_scrubrobin","Southern Scrub-robin","rare","bush",0.35),
-      sp("mm_buttonquail","Painted Buttonquail","rare","bush",0.35),
+      sp("mm_buttonquail","Painted Buttonquail","rare","bush",0.35,true),
       sp("mm_fantailedcuckoo","Fan-tailed Cuckoo","rare","bush",0.45),
       sp("mm_blueparrot","Blue-winged Parrot","rare","bush",0.40),
       sp("mm_yellowrobin","Eastern Yellow Robin","rare","bush",0.55),
@@ -822,7 +822,7 @@ var SITES = {
       sp("nc_hoodedrobin","Hooded Robin","rare","bush",0.45),
       sp("nc_chough","White-winged Chough","rare","bush",0.60),
       sp("nc_beeeater","Rainbow Bee-eater","rare","bush",0.60),
-      sp("nc_buttonquail","Painted Buttonquail","rare","bush",0.35),
+      sp("nc_buttonquail","Painted Buttonquail","rare","bush",0.35,true),
       sp("nc_littleeagle","Little Eagle","rare","raptor",0.45)
     ]
   },
@@ -852,8 +852,8 @@ var SITES = {
       sp("bw_reedwarbler","Australian Reed Warbler","uncommon","bush",0.55),
       sp("bw_grassbird","Little Grassbird","uncommon","bush",0.50),
       sp("bw_kestrel","Nankeen Kestrel","uncommon","raptor",0.60),
-      sp("bw_auscrake","Australian Crake","rare","water",0.35),
-      sp("bw_baillonscrake","Baillon's Crake","rare","water",0.35),
+      sp("bw_auscrake","Australian Crake","rare","water",0.35,true),
+      sp("bw_baillonscrake","Baillon's Crake","rare","water",0.35,true),
       sp("bw_bbduck","Blue-billed Duck","rare","water",0.45),
       sp("bw_freckledduck","Freckled Duck","rare","water",0.40),
       sp("bw_rkdotterel","Red-kneed Dotterel","rare","water",0.45),
@@ -864,7 +864,7 @@ var SITES = {
     ]
   },
   banghamcp: {
-    id:"banghamcp", name:"Mallee Scrub", /* eBird hotspot: Bangham Conservation Park */ size:"large", zone:"inland", hide:false, hub:false, wet:false,
+    id:"banghamcp", name:"Mallee Scrub", /* eBird hotspot: Bangham Conservation Park */ size:"large", zone:"inland", hide:false, hub:false, wet:false, farGroups:["raptor"],
     blurb:"Mallee box and stringybark scrub — a long list if you're patient, heathwrens and buttonquail included.",
     species:[
       sp("bg_galah","Galah","common","bush",0.90),
@@ -891,7 +891,7 @@ var SITES = {
       sp("bg_scrubrobin","Southern Scrub-robin","rare","bush",0.35),
       sp("bg_hoodedrobin","Hooded Robin","rare","bush",0.45),
       sp("bg_scarletrobin","Scarlet Robin","rare","bush",0.55),
-      sp("bg_buttonquail","Painted Buttonquail","rare","bush",0.35),
+      sp("bg_buttonquail","Painted Buttonquail","rare","bush",0.35,true),
       sp("bg_firetail","Diamond Firetail","rare","bush",0.45),
       sp("bg_gilbertswhistler","Gilbert's Whistler","rare","bush",0.40),
       sp("bg_greybabbler","Gray-crowned Babbler","rare","bush",0.45),
@@ -933,7 +933,7 @@ var SITES = {
       sp("pn_wedgetailedeagle","Wedge-tailed Eagle","uncommon","raptor",0.70),
       sp("pn_brownfalcon","Brown Falcon","uncommon","raptor",0.60),
       sp("pn_emuwren","Southern Emu-wren","rare","bush",0.40),
-      sp("pn_buttonquail","Painted Buttonquail","rare","bush",0.35),
+      sp("pn_buttonquail","Painted Buttonquail","rare","bush",0.35,true),
       sp("pn_shriketit","Eastern Shrike-tit","rare","bush",0.40),
       sp("pn_firetail","Beautiful Firetail","rare","bush",0.40),
       sp("pn_scarletrobin","Scarlet Robin","rare","bush",0.50),
@@ -945,7 +945,7 @@ var SITES = {
     ]
   },
   lakeleake: {
-    id:"lakeleake", name:"Reedy Lake", /* eBird hotspot: Lake Leake */ size:"large", zone:"inland", hide:false, hub:false, wet:true,
+    id:"lakeleake", name:"Reedy Lake", /* eBird hotspot: Lake Leake */ size:"large", zone:"inland", hide:false, hub:false, wet:true, farGroups:["water"],
     blurb:"A big reedy lake behind the dunes — waterfowl by the raft-load, with mallee scrub around the margins for the walkers.",
     species:[
       sp("ll_blackswan","Black Swan","common","water",0.85),
@@ -979,7 +979,7 @@ var SITES = {
       sp("ll_wedgetailedeagle","Wedge-tailed Eagle","uncommon","raptor",0.65),
       sp("ll_swampharrier","Swamp Harrier","uncommon","raptor",0.55),
       sp("ll_blackshoulderedkite","Black-shouldered Kite","uncommon","raptor",0.60),
-      sp("ll_crake","Australian Crake","rare","water",0.40),
+      sp("ll_crake","Australian Crake","rare","water",0.40,true),
       sp("ll_freckledduck","Freckled Duck","rare","water",0.35),
       sp("ll_seaeagle","White-bellied Sea-Eagle","mega","raptor",0.30)
     ]
@@ -1017,7 +1017,7 @@ var SITES = {
       sp("bp_blackshoulderedkite","Black-shouldered Kite","uncommon","raptor",0.60),
       sp("bp_hobby","Australian Hobby","rare","raptor",0.45),
       sp("bp_sparrowhawk","Collared Sparrowhawk","rare","raptor",0.50),
-      sp("bp_bbrail","Buff-banded Rail","rare","water",0.40),
+      sp("bp_bbrail","Buff-banded Rail","rare","water",0.40,true),
       sp("bp_avocet","Red-necked Avocet","uncommon","water",0.55),
       sp("bp_redcapplover","Red-capped Plover","uncommon","water",0.55),
       sp("bp_oystercatcher","Sooty Oystercatcher","rare","water",0.40),
@@ -1050,7 +1050,7 @@ var SITES = {
       sp("pd_scrubrobin","Southern Scrub-robin","rare","bush",0.35),
       sp("pd_treecreeperbrown","Brown Treecreeper","uncommon","bush",0.55),
       sp("pd_sittella","Varied Sittella","uncommon","bush",0.55),
-      sp("pd_buttonquail","Painted Buttonquail","rare","bush",0.35),
+      sp("pd_buttonquail","Painted Buttonquail","rare","bush",0.35,true),
       sp("pd_thornbillyellowrumped","Yellow-rumped Thornbill","common","bush",0.75),
       sp("pd_thornbillstriated","Striated Thornbill","uncommon","bush",0.65),
       sp("pd_thornbillbuffrumped","Buff-rumped Thornbill","uncommon","bush",0.55),
@@ -1097,8 +1097,8 @@ var SITES = {
       sp("hl_pacificheron","Pacific Heron","rare","water",0.40),
       sp("hl_yellowbilledspoonbill","Yellow-billed Spoonbill","uncommon","water",0.55),
       sp("hl_sharptailedsandpiper","Sharp-tailed Sandpiper","rare","water",0.35),
-      sp("hl_lewinsrail","Lewin's Rail","rare","water",0.35),
-      sp("hl_spotlesscrake","Spotless Crake","rare","water",0.30),
+      sp("hl_lewinsrail","Lewin's Rail","rare","water",0.35,true),
+      sp("hl_spotlesscrake","Spotless Crake","rare","water",0.30,true),
       sp("hl_littleeagle","Little Eagle","rare","raptor",0.40),
       sp("hl_bluebilledduck","Blue-billed Duck","rare","water",0.35),
       sp("hl_blackfalcon","Black Falcon","rare","raptor",0.35),
@@ -1107,7 +1107,7 @@ var SITES = {
     ]
   },
   boollagoon: {
-    id:"boollagoon", name:"Game Reserve", /* eBird hotspot: Bool Lagoon Game Reserve */ size:"large", zone:"inland", hide:true, hub:false, wet:true,
+    id:"boollagoon", name:"Game Reserve", /* eBird hotspot: Bool Lagoon Game Reserve */ size:"large", zone:"inland", hide:true, hub:false, wet:true, farGroups:["water"],
     blurb:"The region's flagship wetland — thousands of ducks and ibis when it's full, waders scattered right across the flats.",
     species:[
       sp("bo_magpiegoose","Magpie Goose","uncommon","water",0.60),
@@ -1222,6 +1222,31 @@ SITE_IDS.forEach(function(id){ if(SITES[id].wet) WET_SITE_IDS[id] = 1; });
    hardcoded starting-site id elsewhere in the file. Falls back to the first
    site if nothing's flagged as the hub. */
 var HUB_SITE_ID = SITE_IDS.filter(function(id){ return SITES[id].hub; })[0] || SITE_IDS[0];
+/* Sites where a species group is far enough off that a scope removes a
+   detection penalty — driven by each site's own optional `farGroups` array
+   (e.g. farGroups:["raptor"]) rather than a hardcoded list of site ids, so
+   this keeps working when a region's site list is swapped out. */
+var FAR_SITE_GROUPS = {};
+SITE_IDS.forEach(function(id){ if(SITES[id].farGroups && SITES[id].farGroups.length) FAR_SITE_GROUPS[id] = SITES[id].farGroups; });
+
+/* "X, Y &amp; Z" — joins a list of names the same way the shop copy for the
+   scope (and other spots) expects, so that text doesn't need its own
+   one-off joining logic. */
+function joinNamesAmp(names){
+  if(names.length<=1) return names.join("");
+  if(names.length===2) return names[0] + " &amp; " + names[1];
+  return names.slice(0,-1).join(", ") + " &amp; " + names[names.length-1];
+}
+
+/* The scope's shop-screen blurb: built from whichever sites actually have a
+   farGroups entry, so it never names a site that isn't on the current map. */
+function scopeShopDesc(){
+  var idBonusText = "+" + Math.round((CONFIG.effects.scopeRaptorIdMult-1)*100) + "% ID on raptors everywhere";
+  var farIds = Object.keys(FAR_SITE_GROUPS);
+  if(!farIds.length) return idBonusText;
+  var names = farIds.map(function(id){ return SITES[id].name; });
+  return idBonusText + ", and removes the distance penalty at " + joinNamesAmp(names);
+}
 
 /* A deduplicated roster, one row per real species name (several site entries
    can share a name, e.g. Pacific Black Duck turns up at half the wetlands) —
@@ -1318,12 +1343,16 @@ function setBestScoreIfHigher(score){
   return false;
 }
 
-/* ---- Life list (across every game ever played in this browser) ----
+/* ---- Life list (across every game of this edition ever played in this
+   browser) ----
    Keyed by species name (same dedup key the checklist uses) to the
    real-world date it was first ever confirmed. Used to (a) flag a "life
    tick" — a species this player has genuinely never seen before, in any
-   game — and (b) show a first-seen date on the checklist. Kept separate
-   from state.confirmed, which is wiped every game. */
+   game of this edition — and (b) show a first-seen date on the checklist.
+   Kept separate from state.confirmed, which is wiped every game.
+   The key names are per-edition (see index-uk.html / index-usa.html) so a
+   personal best or life list from one regional edition never gets mixed
+   into another's — their species pools aren't comparable. */
 var LIFE_LIST_KEY = "twitchathon_life_list";
 var GAMES_PLAYED_KEY = "twitchathon_games_played";
 function getLifeListStore(){
@@ -1511,9 +1540,8 @@ function getWeatherWaterVisualPenalty(site, species){
 
 function siteDistancePenalty(site, species){
   if(state.loadout.scope) return 1;
-  if(site.id==="banghamcp" && species.group==="raptor") return CONFIG.effects.distancePenaltyMult;
-  if(site.id==="lakeleake" && species.group==="water") return CONFIG.effects.distancePenaltyMult;
-  if(site.id==="boollagoon" && species.group==="water") return CONFIG.effects.distancePenaltyMult;
+  var groups = FAR_SITE_GROUPS[site.id];
+  if(groups && groups.indexOf(species.group)!==-1) return CONFIG.effects.distancePenaltyMult;
   return 1;
 }
 
@@ -2251,7 +2279,8 @@ function maybeTriggerEvent(context){
       break;
     }
     case "coldFront": {
-      var siteId = pick(["beachportlagoon","boollagoon"]);
+      var wetIds = Object.keys(WET_SITE_IDS);
+      var siteId = pick(wetIds.length ? wetIds : SITE_IDS);
       var cfDur = 480;
       state.activeEffects.push({ type:"coldFront", siteId: siteId, expiresAtClock: state.clock+cfDur, label:"Fallout: "+SITES[siteId].name });
       state.forcedBadNight = true;
@@ -2416,9 +2445,8 @@ function countUnseenBasicAtSite(siteId, confirmedNames){
 
 function smartBotDistancePenalty(bot, site, species){
   if(bot.gear.scope) return 1;
-  if(site.id==="banghamcp" && species.group==="raptor") return CONFIG.effects.distancePenaltyMult;
-  if(site.id==="lakeleake" && species.group==="water") return CONFIG.effects.distancePenaltyMult;
-  if(site.id==="boollagoon" && species.group==="water") return CONFIG.effects.distancePenaltyMult;
+  var groups = FAR_SITE_GROUPS[site.id];
+  if(groups && groups.indexOf(species.group)!==-1) return CONFIG.effects.distancePenaltyMult;
   return 1;
 }
 
@@ -3257,7 +3285,7 @@ function renderRegistration(){
         '</div>' +
         '<div class="shopcard">' +
           '<div class="icon optics">'+shopIcon("optics")+'</div>' +
-          '<div class="body"><strong>Spotting scope</strong><div class="desc">+'+Math.round((CONFIG.effects.scopeRaptorIdMult-1)*100)+'% ID on raptors everywhere, and removes the distance penalty at Bangham CP, Lake Leake &amp; Bool Lagoon Game Reserve</div></div>' +
+          '<div class="body"><strong>Spotting scope</strong><div class="desc">'+scopeShopDesc()+'</div></div>' +
           '<div class="radiogrp ctrl">' +
             '<button type="button" class="chip'+(!regDraft.scope?" active":"")+'" data-scope="0">Skip</button>' +
             '<button type="button" class="chip'+(regDraft.scope?" active":"")+'" data-scope="1">Bring it &middot; '+c.scope+' pts</button>' +

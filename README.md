@@ -29,7 +29,7 @@ twitchathon/
 
 - `id`, display `name` (the short, casual, in-game label), and the real eBird hotspot name (kept as a source-tracing note, same as before)
 - `size` (`pocket` / `standard` / `large`), `zone` (`inland` / `coastal`)
-- `hide` (has a hide/blind — unlocks the watch-from-hide option), `hub` (the one camp/base site — exactly one location should have this set), `wet` (open water, so morning mist visibly hurts water-bird sightings there)
+- `hide` (has a hide/blind — unlocks the watch-from-hide option), `hub` (the one camp/base site — exactly one location should have this set), `wet` (open water, so morning mist visibly hurts water-bird sightings there), `farGroups` (optional — species groups that need a spotting scope here or lose some ID chance, e.g. raptors soaring too far off to call without one)
 - a flavor-text `blurb`
 - optional per-site loop lengths, if you want some locations to offer different walk options than the default by-size menu
 - the full species list for that site: `id`, `name`, `tier` (`common` / `uncommon` / `rare` / `mega`), `group` (`bush` / `water` / `raptor` / `nocturnal`), `idDiff` (0–1, roughly "how hard is this one to pin down"), and whether it's an audio-only ID (nocturnal specialists mostly)
@@ -79,6 +79,8 @@ Same steps whether you're editing `index.html`, `index-uk.html`, `index-usa.html
 Each site's `name` field is a short, casual label (e.g. "Sewage Ponds", "Granite Outcrop") rather than its formal name, so the map and UI read a bit more like a fictional gazetteer. The original real-world/eBird hotspot name for each site is preserved in an inline comment next to its entry in the `SITES` object in `index.html`, in case it's ever useful to trace a site back to its source location.
 
 A couple of small conveniences worth knowing about if you're editing `index.html` by hand rather than through the location editor: the starting/camp site (`state.currentSite`) is derived from whichever location has `hub:true`, and the "wet" sites used for the morning-mist weather penalty (`WET_SITE_IDS`) are derived from each site's own `wet` flag — neither is a separate list to keep in sync any more.
+
+The spotting scope's distance-penalty removal works the same way: give a site an optional `farGroups` array (e.g. `farGroups:["raptor"]`) and species from that group lose some ID chance there unless the scope was brought — the shop screen's description text, and the "which sites need one" logic in the game itself, are both built from whichever sites actually have `farGroups` set, so nothing needs updating by hand when you swap in a different region's site list. Same for the "cold front" weather event's fallout site, which is now picked from the same wet-site list rather than a couple of hardcoded ids.
 
 
 ## License

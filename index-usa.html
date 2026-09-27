@@ -1236,6 +1236,31 @@ SITE_IDS.forEach(function(id){ if(SITES[id].wet) WET_SITE_IDS[id] = 1; });
    hardcoded starting-site id elsewhere in the file. Falls back to the first
    site if nothing's flagged as the hub. */
 var HUB_SITE_ID = SITE_IDS.filter(function(id){ return SITES[id].hub; })[0] || SITE_IDS[0];
+/* Sites where a species group is far enough off that a scope removes a
+   detection penalty — driven by each site's own optional `farGroups` array
+   (e.g. farGroups:["raptor"]) rather than a hardcoded list of site ids, so
+   this keeps working when a region's site list is swapped out. */
+var FAR_SITE_GROUPS = {};
+SITE_IDS.forEach(function(id){ if(SITES[id].farGroups && SITES[id].farGroups.length) FAR_SITE_GROUPS[id] = SITES[id].farGroups; });
+
+/* "X, Y &amp; Z" — joins a list of names the same way the shop copy for the
+   scope (and other spots) expects, so that text doesn't need its own
+   one-off joining logic. */
+function joinNamesAmp(names){
+  if(names.length<=1) return names.join("");
+  if(names.length===2) return names[0] + " &amp; " + names[1];
+  return names.slice(0,-1).join(", ") + " &amp; " + names[names.length-1];
+}
+
+/* The scope's shop-screen blurb: built from whichever sites actually have a
+   farGroups entry, so it never names a site that isn't on the current map. */
+function scopeShopDesc(){
+  var idBonusText = "+" + Math.round((CONFIG.effects.scopeRaptorIdMult-1)*100) + "% ID on raptors everywhere";
+  var farIds = Object.keys(FAR_SITE_GROUPS);
+  if(!farIds.length) return idBonusText;
+  var names = farIds.map(function(id){ return SITES[id].name; });
+  return idBonusText + ", and removes the distance penalty at " + joinNamesAmp(names);
+}
 
 /* A deduplicated roster, one row per real species name (several site entries
    can share a name, e.g. Pacific Black Duck turns up at half the wetlands) —
@@ -1316,8 +1341,11 @@ function randRange(a,b){ return a + Math.random()*(b-a); }
 function clamp(v,lo,hi){ return Math.max(lo, Math.min(hi, v)); }
 function spendEnergy(amount){ state.energy = clamp(state.energy - amount*(state.fatigueMult||1), 0, state.energyCeiling); }
 
-/* ---- Personal best (this browser only) ---- */
-var BEST_SCORE_KEY = "twitchathon_best_score";
+/* ---- Personal best (this browser only) ----
+   Suffixed per regional edition (this is the USA one) so a best score here
+   never gets compared against, or overwritten by, a different edition's —
+   the total catchable species differ, so the scores aren't comparable. */
+var BEST_SCORE_KEY = "twitchathon_best_score_usa";
 function getBestScore(){
   try{
     var v = localStorage.getItem(BEST_SCORE_KEY);
@@ -1332,14 +1360,18 @@ function setBestScoreIfHigher(score){
   return false;
 }
 
-/* ---- Life list (across every game ever played in this browser) ----
+/* ---- Life list (across every game of this edition ever played in this
+   browser) ----
    Keyed by species name (same dedup key the checklist uses) to the
    real-world date it was first ever confirmed. Used to (a) flag a "life
    tick" — a species this player has genuinely never seen before, in any
-   game — and (b) show a first-seen date on the checklist. Kept separate
-   from state.confirmed, which is wiped every game. */
-var LIFE_LIST_KEY = "twitchathon_life_list";
-var GAMES_PLAYED_KEY = "twitchathon_games_played";
+   game of this edition — and (b) show a first-seen date on the checklist.
+   Kept separate from state.confirmed, which is wiped every game.
+   Suffixed per regional edition (this is the USA one), same reasoning as
+   BEST_SCORE_KEY above — a USA "Robin" and a South Australian "Robin" life
+   tick shouldn't be conflated. */
+var LIFE_LIST_KEY = "twitchathon_life_list_usa";
+var GAMES_PLAYED_KEY = "twitchathon_games_played_usa";
 function getLifeListStore(){
   try{
     var v = localStorage.getItem(LIFE_LIST_KEY);
@@ -1525,9 +1557,8 @@ function getWeatherWaterVisualPenalty(site, species){
 
 function siteDistancePenalty(site, species){
   if(state.loadout.scope) return 1;
-  if(site.id==="banghamcp" && species.group==="raptor") return CONFIG.effects.distancePenaltyMult;
-  if(site.id==="lakeleake" && species.group==="water") return CONFIG.effects.distancePenaltyMult;
-  if(site.id==="boollagoon" && species.group==="water") return CONFIG.effects.distancePenaltyMult;
+  var groups = FAR_SITE_GROUPS[site.id];
+  if(groups && groups.indexOf(species.group)!==-1) return CONFIG.effects.distancePenaltyMult;
   return 1;
 }
 
@@ -2265,7 +2296,8 @@ function maybeTriggerEvent(context){
       break;
     }
     case "coldFront": {
-      var siteId = pick(["beachportlagoon","boollagoon"]);
+      var wetIds = Object.keys(WET_SITE_IDS);
+      var siteId = pick(wetIds.length ? wetIds : SITE_IDS);
       var cfDur = 480;
       state.activeEffects.push({ type:"coldFront", siteId: siteId, expiresAtClock: state.clock+cfDur, label:"Fallout: "+SITES[siteId].name });
       state.forcedBadNight = true;
@@ -2430,9 +2462,8 @@ function countUnseenBasicAtSite(siteId, confirmedNames){
 
 function smartBotDistancePenalty(bot, site, species){
   if(bot.gear.scope) return 1;
-  if(site.id==="banghamcp" && species.group==="raptor") return CONFIG.effects.distancePenaltyMult;
-  if(site.id==="lakeleake" && species.group==="water") return CONFIG.effects.distancePenaltyMult;
-  if(site.id==="boollagoon" && species.group==="water") return CONFIG.effects.distancePenaltyMult;
+  var groups = FAR_SITE_GROUPS[site.id];
+  if(groups && groups.indexOf(species.group)!==-1) return CONFIG.effects.distancePenaltyMult;
   return 1;
 }
 
@@ -3271,7 +3302,7 @@ function renderRegistration(){
         '</div>' +
         '<div class="shopcard">' +
           '<div class="icon optics">'+shopIcon("optics")+'</div>' +
-          '<div class="body"><strong>Spotting scope</strong><div class="desc">+'+Math.round((CONFIG.effects.scopeRaptorIdMult-1)*100)+'% ID on raptors everywhere, and removes the distance penalty at Bangham CP, Lake Leake &amp; Bool Lagoon Game Reserve</div></div>' +
+          '<div class="body"><strong>Spotting scope</strong><div class="desc">'+scopeShopDesc()+'</div></div>' +
           '<div class="radiogrp ctrl">' +
             '<button type="button" class="chip'+(!regDraft.scope?" active":"")+'" data-scope="0">Skip</button>' +
             '<button type="button" class="chip'+(regDraft.scope?" active":"")+'" data-scope="1">Bring it &middot; '+c.scope+' pts</button>' +
