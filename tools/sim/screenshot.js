@@ -21,5 +21,5 @@ else {
   else if(which==="end"){ s.clock=2000; T.endGame(true,"3:00pm Sunday. Time's up!"); body=T.__lastHtml; }
   else { T.__render(); body=T.__lastHtml; }
 }
-fs.writeFileSync(process.argv[3], '<meta charset="utf-8"><title>'+which+' preview</title><style>'+css+'body{background:var(--paper)}</style><div id="app">'+body+"</div>");
+fs.writeFileSync(process.argv[3], (process.env.LIGHT?'<script>document.documentElement.setAttribute("data-theme","light")</script>':'')+'<meta charset="utf-8"><title>'+which+' preview</title><style>'+css+'body{background:var(--paper)} #app{margin-top:-'+(process.env.SHIFT||0)+'px}</style><div id="app">'+body+"</div>");
 console.log("wrote", process.argv[3]);

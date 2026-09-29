@@ -185,6 +185,21 @@
   /* ---------- Shopping list: horizontal RPG-loadout cards ---------- */
   .shopcard{display:flex;align-items:center;gap:12px;padding:12px 2px;border-bottom:1px solid var(--line);flex-wrap:wrap;}
   .shopcard:last-child{border-bottom:none;}
+  /* The shop is grouped — Optics / Comfort / Time — so thirteen equal rows
+     read as three decisions. Each group has an eyebrow and its own icon tint. */
+  .shopgroup{margin-top:14px;padding-top:6px;border-top:2px solid var(--line);}
+  .shopgroup:first-of-type{margin-top:6px;}
+  .shopgroup-head{display:flex;justify-content:space-between;align-items:baseline;gap:10px;padding:6px 2px 2px;}
+  .shopgroup-head .gname{font-family:'JetBrains Mono',monospace;font-size:.72rem;letter-spacing:.1em;text-transform:uppercase;font-weight:700;}
+  .shopgroup-head .gnote{font-size:.78rem;color:var(--ink-soft);}
+  .shopgroup.optics .gname{color:var(--coastal);}
+  .shopgroup.comfort .gname{color:var(--accent-2);}
+  .shopgroup.time .gname{color:var(--skill);}
+  .shopgroup.comfort .icon.optics{background:var(--accent-2-soft);color:var(--accent-2);}
+  .shopgroup.time .icon.optics{background:var(--skill-soft);color:var(--skill);}
+  .forecast{display:inline-block;margin:0 0 4px;padding:2px 9px;border-radius:8px;background:var(--warn-soft);color:var(--warn);font-weight:700;font-size:.8rem;}
+  .budget-split{display:flex;gap:10px;flex-wrap:wrap;font-family:'JetBrains Mono',monospace;font-size:.72rem;color:var(--ink-soft);margin-top:3px;}
+  .budget-split b{color:var(--ink);font-weight:700;}
   .shopcard .icon{flex:none;width:38px;height:38px;border-radius:11px;display:flex;align-items:center;justify-content:center;}
   .shopcard .icon.optics{background:var(--coastal-soft);color:var(--coastal);}
   .shopcard .icon.food{background:var(--accent-2-soft);color:var(--accent-2);}
@@ -233,7 +248,7 @@
   .hud-right .val.warn{color:var(--bad);}
 
   .alerts{padding:8px 16px 0;display:flex;flex-wrap:wrap;gap:6px;}
-  .onboard-hint{margin:10px 16px 0;padding:10px 12px;background:var(--accent-soft);border-radius:10px;font-size:.93rem;color:var(--ink);line-height:1.5;}
+  .onboard-hint{margin:10px 16px 0;padding:10px 12px;background:transparent;border:1px dashed var(--line);border-radius:10px;font-size:.9rem;color:var(--ink-soft);line-height:1.5;}
   .onboard-hint strong{color:var(--accent);}
   /* Three bands sit under the HUD — standings, odds, alerts — and used to
      share one background, one type size and one rule, so they read as a
@@ -260,11 +275,27 @@
   .modchip{display:inline-block;border-radius:20px;padding:1px 8px;font-size:.76rem;white-space:nowrap;}
   .modchip.mod-pos{background:var(--accent-soft);color:var(--accent);}
   .modchip.mod-neg{background:var(--bad-soft);color:var(--bad);}
+  /* Good news green, bad news red, neutral amber — same split the odds chips use. */
   .alert-pill{font-family:'JetBrains Mono',monospace;font-size:.78rem;background:var(--accent-2-soft);color:var(--accent-2);border-radius:20px;padding:3px 10px;}
+  .alert-pill.good{background:var(--accent-soft);color:var(--accent);}
+  .alert-pill.bad{background:var(--bad-soft);color:var(--bad);}
 
   /* ---------- Log ---------- */
   .log{padding:14px 16px 8px;display:flex;flex-direction:column;gap:8px;flex:1;}
   .entry{border-left:3px solid var(--line);padding:8px 12px;background:var(--card);border-radius:0 8px 8px 0;}
+  /* Quiet quarter-hours and repeat sightings drop to a single muted line
+     with no card, so the feed reads like a notebook: the ticks are the
+     entries, the nothing-happened lines are the gaps between them. */
+  .entry.quiet{background:transparent;border-left-color:var(--line);padding:2px 12px;}
+  .entry.quiet .ts{display:inline;margin-right:8px;}
+  .entry.quiet .txt{font-size:.84rem;color:var(--ink-soft);}
+  /* A confirmed sighting leads with the bird's name and tier, sentence underneath. */
+  .entry .bird{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-family:'JetBrains Mono',monospace;font-weight:700;font-size:1.05rem;line-height:1.3;margin:1px 0 2px;}
+  .entry.tier-rare .bird{font-size:1.12rem;}
+  .entry.tier-mega .bird{font-size:1.22rem;}
+  .entry .bird .pill{font-weight:600;}
+  .entry.has-bird .txt{font-size:.86rem;color:var(--ink-soft);}
+  .entry.has-bird .txt b{font-weight:600;color:var(--ink);}
   .entry.encounter{border-left-color:var(--accent);background:var(--accent-soft);}
   /* Rarity ramps up the volume on a genuinely new tick: common/uncommon
      stay at the base green, rare gets a heavier border and a deeper tint,
@@ -290,6 +321,14 @@
   /* ---------- Tray (action row, scrolls with the Activity tab) ---------- */
   .tray-wrap{padding-block:10px;}
   .tray{display:grid;grid-template-columns:repeat(auto-fit,minmax(96px,1fr));gap:8px;padding-inline:16px;}
+  /* Two tiers: the one decision that matters most of the time (Go Birding)
+     full width, the housekeeping (tea, snack, camp) smaller underneath. */
+  .tray.two-tier{grid-template-columns:1fr;gap:8px;}
+  .tray-secondary{display:grid;grid-template-columns:repeat(auto-fit,minmax(96px,1fr));gap:8px;}
+  .tray-secondary button{padding:8px 10px;font-size:.8rem;background:var(--paper-2);box-shadow:none;}
+  .tray-secondary button.warn{background:var(--accent-2);color:var(--paper);}
+  .tray button.primary{padding:14px 10px;font-size:.95rem;}
+  .tray-paused{padding:8px 16px;font-family:'JetBrains Mono',monospace;font-size:.8rem;color:var(--ink-soft);font-style:italic;}
 
   /* ---------- Inline action panel (Travel / Watch, in the Activity tab) ---------- */
   .inlinepanel{background:var(--card);border:1px solid var(--line);border-radius:14px;margin:0 16px 12px;padding:14px 16px;box-shadow:var(--shadow-card);transform-origin:top center;animation:panelGrow .22s ease-out;}
@@ -376,8 +415,12 @@
   .modebtn-active{border-color:var(--ink);box-shadow:inset 0 0 0 1px var(--ink);font-weight:700;}
 
   .attempt-badge{display:inline-flex;align-items:center;justify-content:center;min-width:1.7em;height:1.7em;padding:0 .3em;border-radius:50%;background:var(--accent-2-soft);color:var(--accent-2);font-weight:800;font-family:'JetBrains Mono',monospace;margin:0 .15em;vertical-align:-0.3em;}
-  .sleep-btn{display:flex;flex-direction:column;gap:3px;line-height:1.25;}
-  .sleep-btn .energy-note{font-weight:400;opacity:.85;}
+  .wake-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;}
+  .sleep-btn{display:flex;flex-direction:column;align-items:flex-start;gap:4px;line-height:1.25;text-align:left;padding:12px 14px;}
+  .sleep-btn .wake-time{font-family:'JetBrains Mono',monospace;font-size:1.35rem;font-weight:800;letter-spacing:-.01em;}
+  .sleep-btn .wake-sub{font-family:'JetBrains Mono',monospace;font-size:.76rem;color:var(--ink-soft);font-weight:400;}
+  .sleep-btn .energy-note{font-weight:600;font-size:.86rem;}
+  .sleep-btn .wake-tags{display:flex;gap:6px;flex-wrap:wrap;margin-top:2px;}
 
   .lifelist-group{margin-top:16px;}
   .lifelist-group:first-child{margin-top:0;}
@@ -414,6 +457,10 @@
   .lb-row.medal-3{background:linear-gradient(90deg, rgba(181,114,47,.14), transparent);}
   .lb-row.medal-3 .rank{color:#b5722f;}
   .lb-row.you{outline:1.5px solid var(--accent);}
+  /* End screen: how much of each site's list you found. */
+  .sitebar{height:6px;border-radius:3px;background:var(--line);overflow:hidden;margin:4px 0 6px;}
+  .sitebar i{display:block;height:100%;background:var(--accent);border-radius:3px;}
+  .lifelist-group h4 .frac{font-style:normal;font-family:'JetBrains Mono',monospace;font-size:.78rem;color:var(--ink-soft);margin-left:6px;}
   .confetti{position:relative;display:inline-block;width:1px;height:1px;vertical-align:middle;}
   .confetti i{position:absolute;width:5px;height:9px;border-radius:1px;opacity:0;animation:confettiPop 1s ease-out forwards;}
   .confetti i:nth-child(1){background:#e2a35e;left:-14px;top:-4px;animation-delay:.02s;transform:rotate(-20deg);}
@@ -1906,7 +1953,7 @@ function isNameAlreadyKnown(name){
 function addToLifeList(spx, site){
   if(state.confirmed[spx.id]) {
     state.confirmedThisVisit[spx.id]=true;
-    addLog(line(ALREADY_TICKED_LINES, spx.name), "system");
+    addLog(line(ALREADY_TICKED_LINES, spx.name), "quiet");
     return;
   }
   var knownElsewhere = isNameAlreadyKnown(spx.name);
@@ -1923,10 +1970,14 @@ function addToLifeList(spx, site){
   var tierTag = spx.tier==="mega" ? "  <span class='pill mega'>mega</span>" : (spx.tier==="rare" ? "  <span class='pill rare'>rare</span>" : "");
   var lifeTickTag = isLifeTick ? "  <span class='pill life-tick'>life tick</span>" : "";
   if(knownElsewhere){
-    addLog(line(spx.audio?NEW_LOCATION_AUDIO_LINES:NEW_LOCATION_LINES, spx.name) + tierTag, "newlocation", spx.tier);
+    addLog(line(spx.audio?NEW_LOCATION_AUDIO_LINES:NEW_LOCATION_LINES, spx.name), "newlocation", spx.tier);
   } else {
-    addLog(line(spx.audio?CONFIRM_AUDIO_LINES:CONFIRM_LINES, spx.name) + tierTag + lifeTickTag, "encounter", spx.tier);
+    addLog(line(spx.audio?CONFIRM_AUDIO_LINES:CONFIRM_LINES, spx.name), "encounter", spx.tier);
   }
+  /* The feed card leads with the bird's name and its tags (renderLogEntry). */
+  var last = state.log[state.log.length-1];
+  last.birdName = spx.name;
+  last.birdTags = tierTag + lifeTickTag + (spx.audio ? " <span class='pill'>heard</span>" : "") + (knownElsewhere ? " <span class='pill life-tick'>new here</span>" : "");
 }
 
 /* A double flush pairs the ambiguous call with a second, different bird
@@ -2068,8 +2119,8 @@ function processChunk(mode, bonusMult, chunkIndex, offTrail){
     else if(outcome==="ambiguous"){ ambigTriggered=true; break; }
   }
   if(!ambigTriggered){
-    if(!hadConfirm && !hadLost) addLog(line(QUIET_LINES), "system");
-    else if(!hadConfirm && hadLost) addLog(line(LOST_LINES), "system");
+    if(!hadConfirm && !hadLost) addLog(line(QUIET_LINES), "quiet");
+    else if(!hadConfirm && hadLost) addLog(line(LOST_LINES), "quiet");
   }
   maybeTriggerEvent();
   simulateRivals(state.clock);
@@ -3690,6 +3741,10 @@ function renderRegistration(){
   if(regDraft.alarmClock) spent += c.alarmClock;
   if(regDraft.campStove) spent += c.campStove;
   var left = CONFIG.budget - spent;
+  var spentOptics = (regDraft.binoculars==="mid"?c.mid:0) + (regDraft.binoculars==="premium"?c.premium:0) + (regDraft.scope?c.scope:0) + (regDraft.fieldGuide?c.fieldGuide:0) + (regDraft.parabolicMic?c.parabolicMic:0);
+  var spentComfort = (regDraft.weatherproof?c.weatherproof:0) + (regDraft.thermos?c.thermos:0) + (regDraft.campStove?c.campStove:0) + regDraft.snackPacks*c.snackPack + regDraft.snackBars*c.snackBar;
+  var spentTime = (regDraft.headTorch?c.headTorch:0) + (regDraft.trailMap?c.trailMap:0) + (regDraft.alarmClock?c.alarmClock:0);
+  function groupHead(cls, name, note){ return '<div class="shopgroup-head"><span class="gname">'+name+'</span><span class="gnote">'+note+'</span></div>'; }
   var wx = regDraft.weather;
   var wxBelowFloor = wx.mult < CONFIG.effects.weatherproofFloor;
   var wxNote = wxBelowFloor
@@ -3730,6 +3785,7 @@ function renderRegistration(){
           '<div class="icon skill">'+shopIcon("skill")+'</div>' +
           '<div class="body"><strong>Your specialist: '+skillDef.label+'</strong><div class="desc">'+skillDef.desc+'.'+(skillDef.note ? ' '+skillDef.note : '')+'<br />Every team turns up with one specialist, assigned at random and free of charge, each game. Play to their strengths.</div></div>' +
         '</div>' +
+        '<div class="shopgroup optics">' + groupHead("optics", "Optics", "Every bird, every site &mdash; the biggest levers") +
         '<div class="shopcard">' +
           '<div class="icon optics">'+shopIcon("optics")+'</div>' +
           '<div class="body"><strong>Binoculars</strong><div class="desc">Mid: +'+CONFIG.binoculars.mid.det+' detection, +'+CONFIG.binoculars.mid.id+' ID<br>Premium: +'+CONFIG.binoculars.premium.det+' detection, +'+CONFIG.binoculars.premium.id+' ID</div></div>' +
@@ -3757,24 +3813,23 @@ function renderRegistration(){
         '</div>' +
         '<div class="shopcard">' +
           '<div class="icon optics">'+shopIcon("optics")+'</div>' +
-          '<div class="body"><strong>Weatherproof kit</strong><div class="desc">Saturday forecast: <b>'+esc(wx.label)+'</b>. '+wxNote+'<br>Bad weather and misty wetlands never cost you more than 5% detection with the kit</div></div>' +
-          '<div class="radiogrp ctrl">' +
-            '<button type="button" class="chip'+(!regDraft.weatherproof?" active":"")+'" data-wx="0">Skip</button>' +
-            '<button type="button" class="chip'+(regDraft.weatherproof?" active":"")+'" data-wx="1">Bring it &middot; '+c.weatherproof+' pts</button>' +
-          '</div>' +
-        '</div>' +
-        '<div class="shopcard">' +
-          '<div class="icon optics">'+shopIcon("optics")+'</div>' +
           '<div class="body"><strong>Parabolic mic</strong><div class="desc">+'+Math.round((CONFIG.effects.parabolicMicDetectMult-1)*100)+'% detection on anything you\'d otherwise only hear &mdash; owls, nightjars, the bittern &mdash; and on <em>everything</em> in the Pre-dawn and Evening windows, when birds call before you can see them. +'+Math.round((CONFIG.effects.parabolicMicIdMult-1)*100)+'% ID on the heard-only birds</div></div>' +
           '<div class="radiogrp ctrl">' +
             '<button type="button" class="chip'+(!regDraft.parabolicMic?" active":"")+'" data-mic="0">Skip</button>' +
             '<button type="button" class="chip'+(regDraft.parabolicMic?" active":"")+'" data-mic="1">Bring it &middot; '+c.parabolicMic+' pts</button>' +
           '</div>' +
         '</div>' +
-        optionCard("Head torch", "Nocturnal birds +"+Math.round((CONFIG.effects.headTorchNocturnalMult-1)*100)+"% detection before dawn, at dusk and after dark, and a spotlit night walk can still turn up roosting bush birds (at "+Math.round(CONFIG.effects.headTorchNightBushMult*100)+"% of their daytime odds). Saturday night stops being dead time", "ht", regDraft.headTorch, c.headTorch) +
+        '</div>' +
+        '<div class="shopgroup comfort">' + groupHead("comfort", "Comfort", "Energy and weather &mdash; time bought back") +
+        '<div class="shopcard">' +
+          '<div class="icon optics">'+shopIcon("optics")+'</div>' +
+          '<div class="body"><strong>Weatherproof kit</strong><div class="desc"><span class="forecast">Saturday forecast: '+esc(wx.label)+'</span><br>'+wxNote+' Bad weather and misty wetlands never cost you more than 5% detection with the kit</div></div>' +
+          '<div class="radiogrp ctrl">' +
+            '<button type="button" class="chip'+(!regDraft.weatherproof?" active":"")+'" data-wx="0">Skip</button>' +
+            '<button type="button" class="chip'+(regDraft.weatherproof?" active":"")+'" data-wx="1">Bring it &middot; '+c.weatherproof+' pts</button>' +
+          '</div>' +
+        '</div>' +
         optionCard("Thermos", "Tea breaks take "+CONFIG.teaBreak.thermosMinutes+" minutes instead of "+CONFIG.teaBreak.minutes, "th", regDraft.thermos, c.thermos) +
-        optionCard("Trail map", "The odds at a site fade more slowly the longer you work it &mdash; after two hours you\'re at "+Math.round(Math.pow(CONFIG.timeOnSiteDecayTrailMap,8)*100)+"% of fresh odds instead of "+Math.round(Math.pow(CONFIG.timeOnSiteDecay,8)*100)+"%", "tm", regDraft.trailMap, c.trailMap) +
-        optionCard("Alarm clock", "Adds a 3:30am wake on Sunday &mdash; an extra hour of owling before first light, at the short-night recovery rate", "ac", regDraft.alarmClock, c.alarmClock) +
         optionCard("Camp stove", "No cold, damp nights: sleep always recovers at the full rate, whatever the weather does (a cold front included)", "cs", regDraft.campStove, c.campStove) +
         '<div class="shopcard">' +
           '<div class="icon food">'+shopIcon("food")+'</div>' +
@@ -3794,10 +3849,18 @@ function renderRegistration(){
             '<button type="button" id="barPlus">+</button>' +
           '</div>' +
         '</div>' +
-      '</div>' +
+        '</div>' +
+        '<div class="shopgroup time">' + groupHead("time", "Time", "Hours nobody else is using") +
+        optionCard("Head torch", "Nocturnal birds +"+Math.round((CONFIG.effects.headTorchNocturnalMult-1)*100)+"% detection before dawn, at dusk and after dark, and a spotlit night walk can still turn up roosting bush birds (at "+Math.round(CONFIG.effects.headTorchNightBushMult*100)+"% of their daytime odds). Saturday night stops being dead time", "ht", regDraft.headTorch, c.headTorch) +
+        optionCard("Trail map", "The odds at a site fade more slowly the longer you work it &mdash; after two hours you\'re at "+Math.round(Math.pow(CONFIG.timeOnSiteDecayTrailMap,8)*100)+"% of fresh odds instead of "+Math.round(Math.pow(CONFIG.timeOnSiteDecay,8)*100)+"%", "tm", regDraft.trailMap, c.trailMap) +
+        optionCard("Alarm clock", "Adds a 3:30am wake on Sunday &mdash; an extra hour of owling before first light, at the short-night recovery rate", "ac", regDraft.alarmClock, c.alarmClock) +
+        '</div>' +
+              '</div>' +
     '</div>' +
     '<div class="budget-bar">' +
-      '<div>Budget spent: <span class="amt'+(left<0?" over":"")+'">'+spent+' / '+CONFIG.budget+' pts</span>'+(spent<=0?'<div class="muted" style="font-size:.8rem;margin-top:3px;">Buy at least one item before heading out.</div>':'')+'</div>' +
+      '<div>Budget spent: <span class="amt'+(left<0?" over":"")+'">'+spent+' / '+CONFIG.budget+' pts</span>' +
+        (spent>0 ? '<div class="budget-split"><span>Optics <b>'+spentOptics+'</b></span><span>Comfort <b>'+spentComfort+'</b></span><span>Time <b>'+spentTime+'</b></span><span>Left <b>'+left+'</b></span></div>' : '<div class="muted" style="font-size:.8rem;margin-top:3px;">Buy at least one item before heading out.</div>') +
+      '</div>' +
       '<button class="primary" id="beginBtn" '+((left<0||spent<=0)?"disabled":"")+'>Begin the weekend &rarr;</button>' +
     '</div>';
 
@@ -3927,7 +3990,7 @@ function renderMapSvg(positions, travel, highlightId, traveledEdges, remainCount
         if(hot){
           parts.push('<path d="M'+(mx-19).toFixed(1)+','+(my-2).toFixed(1)+' L'+(mx-15).toFixed(1)+','+my.toFixed(1)+' L'+(mx-19).toFixed(1)+','+(my+2).toFixed(1)+'" fill="none" stroke="'+C.roadHot+'" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>');
         }
-        parts.push('<text x="'+mx.toFixed(1)+'" y="'+(my+2).toFixed(1)+'" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="9.5" fill="'+labelColor+'">'+travel[a][b]+'m</text>');
+        parts.push('<text x="'+mx.toFixed(1)+'" y="'+(my+2).toFixed(1)+'" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="9" fill="'+labelColor+'" opacity="'+((hot||visited)?1:0.7)+'">'+travel[a][b]+'m</text>');
       }
     }
   }
@@ -4119,24 +4182,24 @@ function renderActivityTab(){
   var siteRc = siteRemainingCounts()[site.id] || { seen:0, total:0, remaining:0 };
 
   var alerts = state.activeEffects.map(function(e){
-    if(e.type==="rareAlert") return '<span class="alert-pill">Alert: '+esc(e.label)+'</span>';
-    if(e.type==="localTip") return '<span class="alert-pill">Tip: '+esc(e.label)+'</span>';
-    if(e.type==="coldFront") return '<span class="alert-pill">'+esc(e.label)+'</span>';
-    if(e.type==="dewy") return '<span class="alert-pill">Fogged optics</span>';
-    if(e.type==="magpie") return '<span class="alert-pill">Distracted</span>';
-    if(e.type==="goldenLight") return '<span class="alert-pill">Perfect light</span>';
-    if(e.type==="windPickup") return '<span class="alert-pill">Windy</span>';
-    if(e.type==="gearFumble") return '<span class="alert-pill">Fumbled gear</span>';
-    if(e.type==="luckyBreak") return '<span class="alert-pill">Lucky break ready</span>';
-    if(e.type==="fogBurnsOff") return '<span class="alert-pill">Fog burnt off</span>';
-    if(e.type==="trackClosed") return '<span class="alert-pill">'+esc(e.label)+'</span>';
-    if(e.type==="mozzies") return '<span class="alert-pill">'+esc(e.label)+'</span>';
-    if(e.type==="heatHaze") return '<span class="alert-pill">Heat haze</span>';
-    if(e.type==="secondEyes") return '<span class="alert-pill">Second pair of eyes</span>';
-    if(e.type==="hideTip") return '<span class="alert-pill">Hide tip</span>';
+    if(e.type==="rareAlert") return '<span class="alert-pill good">Alert: '+esc(e.label)+'</span>';
+    if(e.type==="localTip") return '<span class="alert-pill good">Tip: '+esc(e.label)+'</span>';
+    if(e.type==="coldFront") return '<span class="alert-pill good">'+esc(e.label)+'</span>';
+    if(e.type==="dewy") return '<span class="alert-pill bad">Fogged optics</span>';
+    if(e.type==="magpie") return '<span class="alert-pill bad">Distracted</span>';
+    if(e.type==="goldenLight") return '<span class="alert-pill good">Perfect light</span>';
+    if(e.type==="windPickup") return '<span class="alert-pill bad">Windy</span>';
+    if(e.type==="gearFumble") return '<span class="alert-pill bad">Fumbled gear</span>';
+    if(e.type==="luckyBreak") return '<span class="alert-pill good">Lucky break ready</span>';
+    if(e.type==="fogBurnsOff") return '<span class="alert-pill good">Fog burnt off</span>';
+    if(e.type==="trackClosed") return '<span class="alert-pill bad">'+esc(e.label)+'</span>';
+    if(e.type==="mozzies") return '<span class="alert-pill bad">'+esc(e.label)+'</span>';
+    if(e.type==="heatHaze") return '<span class="alert-pill'+(state.loadout.scope?'':' bad')+'">Heat haze</span>';
+    if(e.type==="secondEyes") return '<span class="alert-pill good">Second pair of eyes</span>';
+    if(e.type==="hideTip") return '<span class="alert-pill good">Hide tip</span>';
     return "";
   }).filter(Boolean).join("");
-  if(state.roadworksPending>0) alerts += '<span class="alert-pill">Roadworks ahead</span>';
+  if(state.roadworksPending>0) alerts += '<span class="alert-pill bad">Roadworks ahead</span>';
 
   var visibleLog = state.log.slice(-CONFIG.activityFeedLimit);
   var hiddenCount = state.log.length - visibleLog.length;
@@ -4176,12 +4239,19 @@ function renderActivityTab(){
       : '<div class="oddsbar muted">Nothing here would be new for your list this visit.</div>') +
     (alerts ? '<div class="alerts">'+alerts+'</div>' : '') +
     (state.log.length<=1 ? '<div class="onboard-hint">New here? Hit <strong>Go Birding</strong> below to start watching. Each watch has a chance of turning up a species, which you then have to <strong>identify</strong> before it counts. Not sure what a spot has got? Check the <strong>Checklist</strong> tab for who&rsquo;s around, or the <strong>Travel</strong> tab to move on somewhere else. Confirmed species build your list until the deadline. Most species, not most sightings, wins.</div>' : '') +
-    '<div class="tray-wrap"><div class="tray">' +
-      '<button id="btnWatch" class="primary'+(state.hasWatchedOnce?"":" glow-cta")+'" '+(state.ambiguous?"disabled":"")+'>Go Birding</button>' +
-      '<button id="btnTea" '+(state.ambiguous?"disabled":"")+'>Tea break'+(nextTeaBreakGain()>0 ? " (+"+nextTeaBreakGain()+")" : (state.energyCeiling<100 ? " (capped)" : " (full)"))+'</button>' +
-      '<button id="btnSnack" '+(state.snackBars<=0||state.ambiguous?"disabled":"")+'>Snack</button>' +
-      (state.day==="Saturday" ? '<button id="btnCamp" class="'+(cutoffLooming()?"glow-cutoff":"")+'" '+((state.ambiguous||minuteOfDay(state.clock)<CONFIG.campEarliestMinuteOfDay)?"disabled":"")+'>Make camp</button>' : '<button class="warn'+(cutoffLooming()?" glow-cutoff":"")+'" id="btnTextIn" '+((state.ambiguous||minuteOfDay(state.clock)<CONFIG.callItAWeekendEarliestMinuteOfDay)?"disabled":"")+'>Call it a weekend</button>') +
-    '</div></div>' +
+    /* While a chase is open the tray collapses to one line so the amber
+       panel is the first thing under the odds card — every button in it
+       would be disabled anyway. */
+    (state.ambiguous
+      ? '<div class="tray-paused">Chase in progress &mdash; decide below before doing anything else.</div>'
+      : '<div class="tray-wrap"><div class="tray two-tier">' +
+        '<button id="btnWatch" class="primary'+(state.hasWatchedOnce?"":" glow-cta")+'">Go Birding</button>' +
+        '<div class="tray-secondary">' +
+          '<button id="btnTea">Tea break'+(nextTeaBreakGain()>0 ? " (+"+nextTeaBreakGain()+")" : (state.energyCeiling<100 ? " (capped)" : " (full)"))+'</button>' +
+          '<button id="btnSnack" '+(state.snackBars<=0?"disabled":"")+'>Snack'+(state.snackBars>0 ? " ("+state.snackBars+")" : "")+'</button>' +
+          (state.day==="Saturday" ? '<button id="btnCamp" class="'+(cutoffLooming()?"glow-cutoff":"")+'" '+(minuteOfDay(state.clock)<CONFIG.campEarliestMinuteOfDay?"disabled":"")+'>Make camp</button>' : '<button class="warn'+(cutoffLooming()?" glow-cutoff":"")+'" id="btnTextIn" '+(minuteOfDay(state.clock)<CONFIG.callItAWeekendEarliestMinuteOfDay?"disabled":"")+'>Call it a weekend</button>') +
+        '</div>' +
+      '</div></div>') +
     renderInlinePanel() +
     (hiddenCount>0 ? '<p class="muted" style="padding:0 16px 6px;font-size:.8rem;">Showing the last '+visibleLog.length+' entries &middot; '+hiddenCount+' earlier this weekend.</p>' : '') +
     '<div class="log" id="logPane">' + visibleLog.slice().reverse().map(function(e,i){ return renderLogEntry(e, i===0); }).join("") + '</div>' +
@@ -4287,6 +4357,11 @@ function renderLogEntry(e, isNew){
      count, a repeat "already on the list" line doesn't. */
   var isSighting = e.cls==="encounter" || e.cls==="newlocation";
   var tickIcon = isSighting ? '<span class="tick-icon" aria-hidden="true">&#9745;</span>' : "";
+  if(e.birdName){
+    return '<div class="entry has-bird '+e.cls+tierCls+(isNew?" reveal":"")+'"><span class="ts">'+e.ts+'</span>' +
+      '<div class="bird">'+tickIcon+esc(e.birdName)+(e.birdTags||"")+'</div>' +
+      '<span class="txt">'+e.txt+'</span></div>';
+  }
   return '<div class="entry '+e.cls+tierCls+(isNew?" reveal":"")+'"><span class="ts">'+e.ts+'</span><span class="txt">'+tickIcon+e.txt+'</span></div>';
 }
 
@@ -4682,7 +4757,7 @@ function renderCamp(){
       '<div class="card">' +
         '<h2>When do you wake?</h2>' +
         '<p class="muted" style="font-size:.85rem;margin-top:0">Earlier means less energy back at a slower rate; a lie-in recovers faster, and every full hour past '+CONFIG.sleep.longSleepBonusFromHours+' lifts Sunday\'s energy ceiling by one. Sunday always ends at 3:00pm regardless. Sleeping in the tent tonight'+(state.loadout.campStove ? " — the camp stove keeps it warm whatever the weather does." : (state.forcedBadNight?" — and it's turned cold and wet.":"."))+'</p>' +
-        '<div class="tray" style="padding:0">' +
+        '<div class="wake-grid">' +
           wakeOptions().map(function(opt){
             var wake = fmtClock(opt.wakeClock).split(" ")[1];
             var prev = sleepEnergyPreview(opt);
@@ -4701,8 +4776,13 @@ function renderCamp(){
             } else {
               note = "+"+prev.goodGain+" energy, or +"+prev.badGain+" if it turns cold";
             }
-            if(opt.ceilingBonus>0) note += " &middot; ceiling "+prev.ceiling;
-            return '<button class="sleep-btn" data-sleep="'+opt.wakeClock+'">Wake at '+wake+(opt.alarm?' (alarm)':'')+'<span class="mono energy-note">'+fmtDuration(opt.hours*60)+' sleep &middot; '+note+'</span></button>';
+            var tags = (opt.alarm ? '<span class="pill">alarm clock</span>' : '') + (opt.ceilingBonus>0 ? '<span class="pill">energy to '+prev.ceiling+'</span>' : '');
+            return '<button class="sleep-btn" data-sleep="'+opt.wakeClock+'">' +
+              '<span class="wake-time">'+wake+'</span>' +
+              '<span class="wake-sub">'+fmtDuration(opt.hours*60)+' sleep &middot; '+opt.rate+'/h</span>' +
+              '<span class="energy-note">'+note+'</span>' +
+              (tags ? '<span class="wake-tags">'+tags+'</span>' : '') +
+            '</button>';
           }).join("") +
         '</div>' +
       '</div>' +
@@ -4726,7 +4806,10 @@ function renderEndLocationSummary(){
   });
   var locNames = Object.keys(bySite).sort(function(a,b){ return bySite[b].length - bySite[a].length; });
   if(!locNames.length) return "<p class='muted'>Nothing confirmed this weekend.</p>";
+  var totals = locationCountsByLabel();
   return locNames.map(function(loc){
+    var tot = totals[loc] ? totals[loc].total : 0;
+    var bar = tot>0 ? '<div class="sitebar"><i style="width:'+Math.round(100*bySite[loc].length/tot)+'%"></i></div>' : '';
     var rows = bySite[loc].slice().sort(function(a,b){
       if(tierRank[a.tier]!==tierRank[b.tier]) return tierRank[a.tier]-tierRank[b.tier];
       return a.name<b.name ? -1 : (a.name>b.name ? 1 : 0);
@@ -4734,7 +4817,7 @@ function renderEndLocationSummary(){
       var tierCls = c.tier==="mega"?"pill mega":(c.tier==="rare"?"pill rare":"pill");
       return '<li>'+esc(c.name)+(c.audio?' <span style="font-size:.75em">(heard)</span>':'')+' <span class="'+tierCls+'">'+c.tier+'</span></li>';
     }).join("");
-    return '<div class="lifelist-group"><h4>'+esc(loc)+' &middot; '+bySite[loc].length+'</h4><ul class="plain">'+rows+'</ul></div>';
+    return '<div class="lifelist-group"><h4>'+esc(loc)+'<span class="frac">'+bySite[loc].length+(tot>0?' of '+tot:'')+'</span></h4>'+bar+'<ul class="plain">'+rows+'</ul></div>';
   }).join("");
 }
 
@@ -4751,7 +4834,9 @@ function renderEnd(){
   var rank = rivalsFinal.findIndex(function(r){ return r.you; }) + 1;
 
   var gotAwayHtml = state.gotAway.length ? state.gotAway.map(function(g){
-    var whatItWas = g.speciesName ? ("Turned out to be a <strong>"+esc(g.speciesName)+"</strong>") : "Never identified";
+    var gsp = g.speciesId ? findSpecies(g.speciesId) : null;
+    var gpill = gsp ? ' <span class="'+(gsp.tier==="mega"?"pill mega":(gsp.tier==="rare"?"pill rare":"pill"))+'">'+gsp.tier+'</span>' : '';
+    var whatItWas = g.speciesName ? ("Turned out to be a <strong>"+esc(g.speciesName)+"</strong>"+gpill) : "Never identified";
     return "<li>A " + (g.audio? "call":"silhouette") + " at " + esc(g.siteName) + ", " + g.at + " &mdash; " + whatItWas + ".</li>";
   }).join("") : "<li class='muted'>Nothing left unresolved. A clean weekend.</li>";
 
