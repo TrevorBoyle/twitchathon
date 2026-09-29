@@ -8,14 +8,14 @@ A browser-based birding competition game. It's Friday evening registration throu
 
 ## Regional editions
 
-`index.html` is the original South Australian game. `index-uk.html` and `index-usa.html` are regional copies of the same game engine. The UK edition has its own hotspot set (15 sites, ~355 species); the USA edition still carries the South Australian site set as a placeholder — populate it with a USA hotspot set using the two tools below (see "Swapping in a different region"). All three files are otherwise identical and fully independent; there's no shared state between them. Each edition tunes its rival difficulty separately (`SMART_DETECT_MULT`, see "The balance harness").
+`index.html` is the original South Australian game. `index-uk.html` and `index-usa.html` are regional copies of the same game engine. The UK edition has its own hotspot set (15 sites, ~265 species); the USA edition still carries the South Australian site set as a placeholder — populate it with a USA hotspot set using the two tools below (see "Swapping in a different region"). All three files are otherwise identical and fully independent; there's no shared state between them. Each edition tunes its rival difficulty separately (`SMART_DETECT_MULT`, see "The balance harness").
 
 ## Project layout
 
 ```
 twitchathon/
 ├── index.html                 the game (South Australia)
-├── index-uk.html               regional copy — UK (own site set: 15 sites, ~355 species)
+├── index-uk.html               regional copy — UK (own site set: 15 sites, ~265 species)
 ├── index-usa.html              regional copy — USA (placeholder SA data until populated)
 ├── tools/
 │   ├── location-editor.html   a companion tool for editing the site/species data

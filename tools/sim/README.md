@@ -59,7 +59,7 @@ Three constants in the game control how hard the rival field is, and each
 edition sets its own values:
 
 - `SMART_DETECT_MULT` — flat multiplier on every rival detection roll. 1.0 on
-  the SA map; 0.60 on the UK map, whose 65–74-species sites otherwise let the
+  the SA map; 0.80 on the UK map, whose richer 50–55-species sites otherwise let the
   bots' patient full-loop plan outscore any human.
 - `SMART_MOVE_STICKINESS` — how much better a neighbouring site must look
   before a bot moves on (2.0 = twice as good).
