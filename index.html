@@ -263,6 +263,8 @@
   .entry.encounter.tier-mega .txt{font-weight:700;}
   .entry.event{border-left-color:var(--accent-2);background:var(--accent-2-soft);}
   .entry.system{border-left-color:var(--ink-soft);}
+  .entry.loopend{border-left-style:dashed;border-left-color:var(--line);background:transparent;color:var(--ink-soft);}
+  .entry.loopend .txt{font-style:italic;}
   .entry.newlocation{border-left-color:var(--coastal);}
   .entry.travel{border-left-color:var(--warn);background:var(--warn-soft);}
   .entry.tea{border-left-color:var(--coffee);background:var(--coffee-soft);}
@@ -543,6 +545,14 @@ var CONFIG = {
      fresh loop does). Doesn't apply to "hide" mode — sitting and watching
      isn't the same kind of tiring as covering ground. */
   continuousWalkFatigue: 1.02,
+  /* Leaving the marked trail mid-loop: the ground is rougher and slower
+     going, so it costs noticeably more energy per minute than the trail
+     would for the same stretch of time (see processChunk). In exchange,
+     the extra ground covered specifically favors the site's harder
+     birds — rare and mega tiers get a real detection boost while
+     off-trail; commons and uncommons don't need the bushbash, so they're
+     untouched either way. Walk mode only — never applies to a hide sit. */
+  offTrail: { energyMult: 1.45, rareDetectMult: 1.2 },
   /* Consecutive tea breaks (no other action taken in between) restore less
      each time, decaying toward a floor — better to space them out. */
   teaBreak: { minutes: 25, restore: 30, restoreDecay: 0.6, restoreFloor: 10 },
@@ -585,6 +595,13 @@ var CONFIG = {
   /* One more look costs the same energy as walking that same 5 minutes
      would, just a bit steeper since you're straining to pin the bird down. */
   keepLookingEnergyMult: 1.5,
+  /* Chance that a "What was that?" moment turns into a double flush — a
+     second, different bird going up nearby at the same time, with only
+     time to chase one before both are gone. Rolled once whenever a
+     single ambiguous encounter would normally fire, and only pays off if
+     another still-wanted species is actually on offer at this site to
+     flush alongside it (see findDoubleFlushCandidate). */
+  doubleFlushChance: 0.30,
   sleep: { tentRate:7, tentBadRate:4 },
   chunkMinutes: 15,
   /* Checked at most once per in-game hour (see maybeTriggerEvent's hour-
@@ -1307,9 +1324,11 @@ function freshState(){
     teaStreak: 0,
     ambiguous: null,
     pendingLoop: null,
+    pendingLoopEndMode: null,
     hasWatchedOnce: false,
     sheet: null,
     watchMode: null,
+    watchOffTrail: false,
     tab: "activity",
     checklistView: "location",
     travelTableOpen: false,
@@ -1736,6 +1755,30 @@ var QUIET_LINES = [
   "Fifteen minutes of the same old regulars.",
   "Not much moving right now."
 ];
+/* Closing line for a committed walk that ran all the way to the end on
+   its own (not cut short by an ambiguous chase or by running Cooked) —
+   see the completion check at the end of startWatch. Gets its own
+   .entry.loopend styling, a plain divider rather than another colored
+   card, so it reads as "end of this stretch" rather than an event. */
+var LOOP_END_LINES = [
+  "Loop complete — back where you started.",
+  "That's the loop walked. Decide what's next.",
+  "Full circuit done. Time to pick a new plan."
+];
+var HIDE_END_LINES = [
+  "Your half hour in the hide is up.",
+  "Thirty minutes in the hide, and that's your sit done.",
+  "Time's up in the hide — stretch your legs and decide what's next."
+];
+/* Flavor for where a double-flush's second bird is calling from, relative
+   to the one you're already looking at — see findDoubleFlushCandidate. */
+var DOUBLE_FLUSH_DIRECTIONS = [
+  "off to your left",
+  "somewhere behind you",
+  "further down the track",
+  "back the way you came",
+  "off to your right"
+];
 var ALREADY_TICKED_LINES = [
   "Another {n} — already on the list.",
   "{n} again — nothing new there.",
@@ -1790,6 +1833,22 @@ function addToLifeList(spx, site){
   }
 }
 
+/* A double flush pairs the ambiguous call with a second, different bird
+   going up nearby at the same moment — only offered when there's another
+   species here that's still actually worth having (same bar as
+   worthChasing below), so it's never just noise for its own sake. Which
+   second species shows up, if any, is independent of what triggered the
+   primary chase. */
+function findDoubleFlushCandidate(site, primary){
+  if(rnd() > CONFIG.doubleFlushChance) return null;
+  var pool = site.species.filter(function(s){
+    if(s.id===primary.id || state.confirmedThisVisit[s.id]) return false;
+    return !isNameAlreadyKnown(s.name) || s.tier==="rare" || s.tier==="mega";
+  });
+  if(!pool.length) return null;
+  return pick(pool);
+}
+
 function handleDetection(site, spx, allowAmbiguous){
   if(allowAmbiguous === undefined) allowAmbiguous = true;
   var luckyIdx = -1;
@@ -1813,11 +1872,20 @@ function handleDetection(site, spx, allowAmbiguous){
      lost; no chase offered. */
   var worthChasing = !isNameAlreadyKnown(spx.name) || spx.tier==="rare" || spx.tier==="mega";
   if(allowAmbiguous && worthChasing && r < idc + remain*0.33){
-    state.ambiguous = { siteId: site.id, zoneId: site.zoneId, speciesId: spx.id, attempts: 0 };
     /* Keep Searching is disabled on the ambiguous panel once you're
-       Cooked (see renderAmbiguousPanel) — so the log line shouldn't
-       promise a chase you can't actually take right this second. */
+       Cooked (see renderAmbiguousPanel) — so a double flush (which asks
+       you to pick one to chase) isn't offered either in that state, same
+       as the log line below shouldn't promise a chase you can't actually
+       take right this second. */
     var tooCookedToChase = energyTier(state.energy).name==="Cooked";
+    var alt = tooCookedToChase ? null : findDoubleFlushCandidate(site, spx);
+    if(alt){
+      var dir = pick(DOUBLE_FLUSH_DIRECTIONS);
+      state.ambiguous = { siteId: site.id, zoneId: site.zoneId, speciesId: spx.id, attempts: 0, altSpeciesId: alt.id, altDirection: dir };
+      addLog("You think that might&rsquo;ve been a <b>"+spx.name+"</b>, but there&rsquo;s also what sounds like a <b>"+alt.name+"</b> "+dir+" &mdash; only time to chase one.", "system");
+      return "ambiguous";
+    }
+    state.ambiguous = { siteId: site.id, zoneId: site.zoneId, speciesId: spx.id, attempts: 0 };
     addLog(tooCookedToChase
       ? "Something stirs in the cover, but you're too worn out to chase it down right now."
       : "Something calls from cover, but nobody can place it yet.", "system");
@@ -1826,15 +1894,20 @@ function handleDetection(site, spx, allowAmbiguous){
   return "lost";
 }
 
-function processChunk(mode, bonusMult, chunkIndex){
+function processChunk(mode, bonusMult, chunkIndex, offTrail){
   bonusMult = bonusMult || 1;
   chunkIndex = chunkIndex || 0;
+  offTrail = mode==="walk" && !!offTrail;
   var site = activeSite();
   var chunkStart = state.clock;
   state.clock += CONFIG.chunkMinutes;
   var chunkEnd = state.clock;
   state.minutesOnSite += CONFIG.chunkMinutes;
   var rate = mode==="hide" ? CONFIG.energyRates.hide : CONFIG.energyRates.walk;
+  /* Off the marked path the going is rougher, not just longer — costs
+     noticeably more energy per minute than the same stretch on the trail
+     would (see CONFIG.offTrail). */
+  if(offTrail) rate *= CONFIG.offTrail.energyMult;
   /* Fatigue ramp only bites on foot — chunkIndex counts consecutive
      15-minute chunks of this same committed walk (see startWatch). */
   var fatigueRamp = mode==="walk" ? Math.pow(CONFIG.continuousWalkFatigue, chunkIndex) : 1;
@@ -1849,8 +1922,14 @@ function processChunk(mode, bonusMult, chunkIndex){
   }));
   /* Which of the candidates actually hit this chunk — decided up front,
      before any clock juggling, so the spacing below can lay them out
-     across the whole chunk instead of wherever the roll order put them. */
-  var hits = candidates.filter(function(s){ return rnd() < detectionChance(site, s, bonusMult); });
+     across the whole chunk instead of wherever the roll order put them.
+     Off-trail's payoff is targeted, not a flat multiplier: only rare/mega
+     candidates get the boosted bonus, so bushbashing through a site with
+     nothing rare left on offer doesn't do anything for you. */
+  var hits = candidates.filter(function(s){
+    var mult = (offTrail && (s.tier==="rare"||s.tier==="mega")) ? bonusMult*CONFIG.offTrail.rareDetectMult : bonusMult;
+    return rnd() < detectionChance(site, s, mult);
+  });
   /* Detections within the same 15-minute chunk used to all land on the
      same displayed minute (the chunk's end), then later all bunched up
      one after another right at the start. Spread evenly across the
@@ -1891,12 +1970,13 @@ function processChunk(mode, bonusMult, chunkIndex){
   return ambigTriggered ? "ambiguous" : "ok";
 }
 
-function startWatch(mode, minutes, bonusMult, startChunkIndex){
+function startWatch(mode, minutes, bonusMult, startChunkIndex, offTrail){
   if(state.ambiguous || state.ended) return;
   state.teaStreak = 0;
   bonusMult = bonusMult || 1;
   var site = activeSite();
   if(mode==="hide" && !site.hide) mode="walk";
+  offTrail = mode==="walk" && !!offTrail;
   var chunks = Math.round(minutes/CONFIG.chunkMinutes);
   /* Tracks consecutive 15-minute chunks of continuous walking for the
      fatigue ramp in processChunk. Only carried over via startChunkIndex
@@ -1904,20 +1984,38 @@ function startWatch(mode, minutes, bonusMult, startChunkIndex){
      call to startWatch (a fresh loop, after a tea break, snack,
      travel, etc.) starts back at 0. */
   var chunkIndex = startChunkIndex || 0;
-  for(var i=0;i<chunks;i++){
+  var i;
+  for(i=0;i<chunks;i++){
     if(state.ended || state.phase!=="play") break;
     if(energyTier(state.energy).name==="Cooked"){
       addLog("Too cooked to keep watching — time for a break.", "system");
       break;
     }
-    var outcome = processChunk(mode, bonusMult, chunkIndex);
+    var outcome = processChunk(mode, bonusMult, chunkIndex, offTrail);
     chunkIndex++;
     if(outcome==="ambiguous"){
       var remainingChunks = chunks - (i+1);
-      if(remainingChunks>0) state.pendingLoop = { mode: mode, bonusMult: bonusMult, minutes: remainingChunks*CONFIG.chunkMinutes, chunkIndex: chunkIndex };
+      if(remainingChunks>0){
+        state.pendingLoop = { mode: mode, bonusMult: bonusMult, minutes: remainingChunks*CONFIG.chunkMinutes, chunkIndex: chunkIndex, offTrail: offTrail };
+      } else {
+        /* The ambiguous chase landed on this session's very last chunk —
+           nothing left to resume, so the normal "ran to completion" check
+           below never gets a turn. The loop/hide sit is still done in
+           every way that matters once the chase itself resolves, though,
+           so that's flagged here for resumePendingLoopOrRender to pick up
+           and log the closing line at that point instead. */
+        state.pendingLoopEndMode = mode;
+      }
       break;
     }
     if(state.ended || state.phase!=="play") break;
+  }
+  /* Ran every chunk without an ambiguous chase or Cooked cutting it short
+     — the committed loop (or hide sit) is genuinely done, not just
+     paused. Worth its own closing line rather than just letting the tray
+     silently reappear — see LOOP_END_LINES/HIDE_END_LINES. */
+  if(i>=chunks && chunks>0 && !state.ended && state.phase==="play"){
+    addLog(mode==="hide" ? line(HIDE_END_LINES) : line(LOOP_END_LINES), "loopend");
   }
   revealAndRender();
 }
@@ -1926,10 +2024,19 @@ function resumePendingLoopOrRender(){
   if(state.pendingLoop && !state.ended && state.phase==="play"){
     var pl = state.pendingLoop;
     state.pendingLoop = null;
-    startWatch(pl.mode, pl.minutes, pl.bonusMult, pl.chunkIndex);
-  } else {
-    revealAndRender();
+    startWatch(pl.mode, pl.minutes, pl.bonusMult, pl.chunkIndex, pl.offTrail);
+    return;
   }
+  /* Mirror image of the case above — a chase that was the tail end of a
+     committed session, with no chunks left to resume, only gets its
+     closing line here, once resolved (see the "else" branch in
+     startWatch's ambiguous handling). */
+  if(state.pendingLoopEndMode){
+    var endMode = state.pendingLoopEndMode;
+    state.pendingLoopEndMode = null;
+    if(!state.ended && state.phase==="play") addLog(endMode==="hide" ? line(HIDE_END_LINES) : line(LOOP_END_LINES), "loopend");
+  }
+  revealAndRender();
 }
 
 /* Same per-minute cost as walking, just steeper — pinning down an ambiguous
@@ -1983,6 +2090,24 @@ function logItAndMoveOn(){
   addLog("Logged as unidentified, and you move on.", "system");
   state.ambiguous = null;
   resumePendingLoopOrRender();
+}
+
+/* Picking a side of a double flush doesn't resolve anything by itself —
+   it just drops the one not chosen (banked as a mystery, same as Ignore
+   and move on) and turns the chase into a normal single-bird ambiguous
+   encounter for the one that was, at attempt 0. No time or energy spent
+   on the choice itself; that only starts once Keep Searching is used. */
+function resolveDoubleFlush(keep){
+  var amb = state.ambiguous;
+  if(!amb || !amb.altSpeciesId) return;
+  var site = activeSite();
+  var keptId = keep==="a" ? amb.speciesId : amb.altSpeciesId;
+  var droppedId = keep==="a" ? amb.altSpeciesId : amb.speciesId;
+  var dropped = findSpecies(droppedId);
+  state.gotAway.push({ siteId: site.id, siteName: site.name, at: fmtClock(state.clock), group: dropped.group, audio: dropped.audio, speciesId: dropped.id, speciesName: dropped.name });
+  addLog("The <b>"+dropped.name+"</b> bolts while you're focused on the other one.", "system");
+  state.ambiguous = { siteId: amb.siteId, zoneId: amb.zoneId, speciesId: keptId, attempts: 0 };
+  revealAndRender();
 }
 
 /* Core single-hop drive: advances the clock, spends energy, rolls the
@@ -2308,6 +2433,11 @@ function maybeTriggerEvent(context){
       break;
     }
     case "goldenLight": {
+      /* "Perfect light" only means something in genuine daylight — skip
+         the roll during Pre-dawn or Night, same way dewyOptics above
+         only rolls in its own early-morning window. */
+      var glWindow = windowIndex(state.clock);
+      if(glWindow===0 || glWindow===7) return;
       var glDur = 30;
       state.activeEffects = state.activeEffects.filter(function(e){ return e.type!=="goldenLight"; });
       state.activeEffects.push({ type:"goldenLight", expiresAtClock: state.clock+glDur, label:"Perfect light" });
@@ -3108,6 +3238,7 @@ function revealAndRender(){
 function revealDelayFor(entry){
   if(!entry) return 580;
   if(entry.cls==="event") return 1000;
+  if(entry.cls==="loopend") return 720;
   if(entry.cls==="encounter" || entry.cls==="newlocation"){
     if(entry.tier==="mega") return 1400;
     if(entry.tier==="rare") return 1000;
@@ -3788,6 +3919,7 @@ function renderLogEntry(e, isNew){
    activity feed rather than an interruption. */
 function renderAmbiguousPanel(){
   var amb = state.ambiguous;
+  if(amb.altSpeciesId) return renderDoubleFlushPanel(amb);
   var cooked = energyTier(state.energy).name==="Cooked";
   var spx = findSpecies(amb.speciesId);
   return '<div class="inlinepanel ambiguous-panel">' +
@@ -3803,7 +3935,33 @@ function renderAmbiguousPanel(){
   '</div>';
 }
 
+/* Two candidates flushed at once (see findDoubleFlushCandidate) — there's
+   only time to go after one before both are gone, so this is a plain
+   either/or with no other options (no keep-searching yet; that starts
+   once a bird's actually been picked to chase). Whichever isn't picked
+   goes straight to gotAway via resolveDoubleFlush. */
+function renderDoubleFlushPanel(amb){
+  var a = findSpecies(amb.speciesId);
+  var b = findSpecies(amb.altSpeciesId);
+  return '<div class="inlinepanel ambiguous-panel">' +
+    '<h3>Two at once!</h3>' +
+    '<p class="sub">You think that might&rsquo;ve been a '+esc(a.name)+', but there&rsquo;s also what sounds like a '+esc(b.name)+' '+esc(amb.altDirection)+'. Only time to chase one before they&rsquo;re both gone.</p>' +
+    '<div class="optlist">' +
+      '<button class="optbtn" id="flushA"><span class="oname">Chase the '+esc(a.name)+'</span></button>' +
+      '<button class="optbtn" id="flushB"><span class="oname">Chase the '+esc(b.name)+'</span></button>' +
+    '</div>' +
+  '</div>';
+}
+
 function attachAmbiguousHandlers(){
+  var amb = state.ambiguous;
+  if(amb && amb.altSpeciesId){
+    var flushA = document.getElementById("flushA");
+    var flushB = document.getElementById("flushB");
+    if(flushA) flushA.addEventListener("click", function(){ resolveDoubleFlush("a"); });
+    if(flushB) flushB.addEventListener("click", function(){ resolveDoubleFlush("b"); });
+    return;
+  }
   var ambKeep = document.getElementById("ambKeep");
   var ambLog = document.getElementById("ambLog");
   var ambTea = document.getElementById("ambTea");
@@ -3842,6 +4000,29 @@ function renderWatchPanel(){
   var toggle = site.hide
     ? '<div class="optlist"><div class="grid2"><button id="modeHide" class="'+(mode!=="walk"?"modebtn-active":"")+'">From the hide</button><button id="modeWalk" class="'+(mode==="walk"?"modebtn-active":"")+'">On foot</button></div></div>'
     : '';
+  /* Off-trail is a walk-only, whole-loop commitment (same "once you set
+     off, you're in for the whole thing" rule as the loop length itself)
+     — picked here alongside the loop, not something you flip mid-walk. */
+  var trailToggle = '', trailNote = '';
+  if(mode==="walk"){
+    /* Deliberately the small chip style (same as the checklist's By
+       rarity/By location toggle) rather than the full-width grid2
+       buttons used for From the hide/On foot above — this is a
+       secondary refinement on top of whichever loop you pick, not
+       another primary choice at the same level as the mode toggle. */
+    trailToggle = '<div class="radiogrp" style="margin:2px 0 12px;">' +
+        '<button class="chip '+(!state.watchOffTrail?"active":"")+'" id="trailStick">Stick to the trail</button>' +
+        '<button class="chip '+(state.watchOffTrail?"active":"")+'" id="trailLeave">Leave the trail</button>' +
+      '</div>';
+    /* Same reasoning as the loop buttons below — the exact number, not a
+       bucketed phrase, so this doesn't read as a vague "better odds"
+       that could mean anything from marginal to huge. */
+    var offTrailPct = Math.round((CONFIG.offTrail.rareDetectMult-1)*100);
+    var offTrailEnergyPct = Math.round((CONFIG.offTrail.energyMult-1)*100);
+    trailNote = state.watchOffTrail
+      ? '<p class="sub">Off the marked path the going is rougher &mdash; this whole loop costs +'+offTrailEnergyPct+'% energy for the same time, but the site&rsquo;s rare and mega birds get +'+offTrailPct+'% odds of turning up.</p>'
+      : '<p class="sub">Leaving the trail costs +'+offTrailEnergyPct+'% energy but gives rare and mega birds +'+offTrailPct+'% odds &mdash; sticking to the trail is the easier, cheaper way to work this site.</p>';
+  }
   var actionHtml;
   if(mode==="hide"){
     var hideCrosses = wouldCrossCutoff(CONFIG.hideSearch.minutes);
@@ -3866,12 +4047,13 @@ function renderWatchPanel(){
          (Sunday) than get cut off mid-walk. */
       var crosses = wouldCrossCutoff(cfg.minutes);
       if(crosses) metaExtra += " &middot; runs past " + cutoffLabel();
+      if(state.watchOffTrail) metaExtra += " &middot; off-trail: +"+Math.round((CONFIG.offTrail.energyMult-1)*100)+"% energy, +"+Math.round((CONFIG.offTrail.rareDetectMult-1)*100)+"% odds on rares";
       return '<button class="optbtn" data-loop="'+key+'" '+(crosses?"disabled":"")+'><span class="oname">'+label+'</span><span class="ometa">'+cfg.minutes+' min'+metaExtra+'</span></button>';
     }).join("");
     actionHtml = '<div class="optlist">' + loopBtns + '</div>';
   }
   return '<div class="inlinepanel watch-panel">' +
-    '<h3>'+(site.hide?"Watch or go birding?":"Which loop?")+'</h3>' + modeNote + toggle + actionHtml +
+    '<h3>'+(site.hide?"Watch or go birding?":"Which loop?")+'</h3>' + modeNote + toggle + trailToggle + trailNote + actionHtml +
     '<button class="ghost block" id="panelClose">Cancel</button>' +
   '</div>';
 }
@@ -4058,6 +4240,10 @@ function attachPanelHandlers(){
   var modeWalk = document.getElementById("modeWalk");
   if(modeHide) modeHide.addEventListener("click", function(){ state.watchMode="hide"; render(); });
   if(modeWalk) modeWalk.addEventListener("click", function(){ state.watchMode="walk"; render(); });
+  var trailStick = document.getElementById("trailStick");
+  var trailLeave = document.getElementById("trailLeave");
+  if(trailStick) trailStick.addEventListener("click", function(){ state.watchOffTrail=false; render(); });
+  if(trailLeave) trailLeave.addEventListener("click", function(){ state.watchOffTrail=true; render(); });
   var doSearchBtn = document.getElementById("doSearch");
   if(doSearchBtn) doSearchBtn.addEventListener("click", function(){
     state.sheet = null;
@@ -4066,8 +4252,9 @@ function attachPanelHandlers(){
   root.querySelectorAll("[data-loop]").forEach(function(b){
     b.addEventListener("click", function(){
       var cfg = CONFIG.loop[b.getAttribute("data-loop")];
+      var offTrail = state.watchOffTrail;
       state.sheet = null;
-      startWatch("walk", cfg.minutes, cfg.bonus);
+      startWatch("walk", cfg.minutes, cfg.bonus, 0, offTrail);
     });
   });
 }
