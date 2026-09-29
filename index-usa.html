@@ -3974,14 +3974,19 @@ function renderMapSvg(positions, travel, highlightId, traveledEdges, remainCount
       parts.push('<circle cx="'+p.x.toFixed(1)+'" cy="'+p.y.toFixed(1)+'" r="'+r+'" fill="'+fill+'"'+(s.hide?' stroke="'+C.icon+'" stroke-width="1"':'')+'/>');
     }
     parts.push(siteIconMarkup(siteIconKind(s), p.x, p.y, r/5, iconColor));
-    var labelX = (p.x+r+6).toFixed(1);
+    /* Labels sit to the right of the pin unless the position says
+       label:"left" — used near the map's right edge, and to keep two close
+       neighbours' names from running into each other. */
+    var labelLeft = p.label==="left";
+    var labelX = (labelLeft ? p.x-r-6 : p.x+r+6).toFixed(1);
+    var anchor = labelLeft ? ' text-anchor="end"' : '';
     var nameWeight = isCurrent?"700":"400";
     /* Uppercase, monospaced, and a touch of letter-spacing so the map
        labels read like a typewritten gazetteer rather than page prose —
        every current name is short enough to sit comfortably on one line. */
-    parts.push('<text x="'+labelX+'" y="'+(p.y+3.5).toFixed(1)+'" font-family="JetBrains Mono, monospace" font-size="10.5" letter-spacing="0.5" font-weight="'+nameWeight+'" fill="'+C.text+'">'+esc(s.name.toUpperCase())+'</text>');
+    parts.push('<text x="'+labelX+'" y="'+(p.y+3.5).toFixed(1)+'"'+anchor+' font-family="JetBrains Mono, monospace" font-size="10.5" letter-spacing="0.5" font-weight="'+nameWeight+'" fill="'+C.text+'">'+esc(s.name.toUpperCase())+'</text>');
     if(rc){
-      parts.push('<text x="'+labelX+'" y="'+(p.y+13.5).toFixed(1)+'" font-family="JetBrains Mono, monospace" font-size="8.5" fill="'+C.textMuted+'" opacity="0.9">'+rc.seen+'/'+rc.total+(closedHere?' &middot; CLOSED':'')+'</text>');
+      parts.push('<text x="'+labelX+'" y="'+(p.y+13.5).toFixed(1)+'"'+anchor+' font-family="JetBrains Mono, monospace" font-size="8.5" fill="'+C.textMuted+'" opacity="0.9">'+rc.seen+'/'+rc.total+(closedHere?' &middot; CLOSED':'')+'</text>');
     }
     if(!isCurrent && travel){
       var shortest = shortestPath(highlightId, id);

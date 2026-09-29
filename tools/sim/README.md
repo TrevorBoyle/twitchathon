@@ -18,6 +18,7 @@ node exp_night.js                   # rival counts at camp vs. at wake
 node exp_bots.js                    # one weekend of rival site histories (spots stuck bots)
 node analytic.js                    # closed-form checks: keep-looking EV, stacking caps, weather EV
 node ui_smoke.js [file]             # renders every screen against a fake DOM, flags undefined/NaN
+node mapshot.js out.html            # writes the edition's map SVG to a standalone page for a look
 ```
 
 Each experiment prints one line per configuration. A game takes ~90 ms on the

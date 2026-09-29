@@ -776,7 +776,7 @@ function sp(id,name,tier,group,idDiff,audio){ return {id:id,name:name,tier:tier,
 
 var SITES = {
   spurn: {
-    id:"spurn", name:"Yorkshire, Spurn Peninsula", /* eBird hotspot: Spurn Bird Observatory Recording Area */ size:"standard", zone:"coastal", hide:true, hub:false, wet:true,
+    id:"spurn", name:"Spurn Point", /* eBird hotspot: Spurn Bird Observatory Recording Area */ size:"standard", zone:"coastal", hide:true, hub:false, wet:true,
     blurb:"",
     species:[
       sp("spurn_carrioncrow","Carrion Crow","common","bush",0.92),
@@ -833,7 +833,7 @@ var SITES = {
     ]
   },
   stmarys: {
-    id:"stmarys", name:"Cornwall, St Mary's", /* eBird hotspot: St Mary's (General, please use more specific hotspot if possible) */ size:"large", zone:"coastal", hide:false, hub:false, wet:true,
+    id:"stmarys", name:"Scilly, St Mary's", /* eBird hotspot: St Mary's (General, please use more specific hotspot if possible) */ size:"large", zone:"coastal", hide:false, hub:false, wet:true,
     blurb:"",
     species:[
       sp("stmarys_bankswallow","Bank Swallow","common","bush",0.85),
@@ -947,7 +947,7 @@ var SITES = {
     ]
   },
   norfolk: {
-    id:"norfolk", name:"Norfolk ", /* eBird hotspot: Cley & Salthouse Marshes NWT NR--Cley Marshes including Hides and Visitor Centre */ size:"large", zone:"coastal", hide:true, hub:false, wet:true,
+    id:"norfolk", name:"Norfolk", /* eBird hotspot: Cley & Salthouse Marshes NWT NR--Cley Marshes including Hides and Visitor Centre */ size:"large", zone:"coastal", hide:true, hub:false, wet:true,
     blurb:"",
     species:[
       sp("norfolk_carrioncrow","Carrion Crow","common","bush",0.92),
@@ -1008,7 +1008,7 @@ var SITES = {
     ]
   },
   flamborough: {
-    id:"flamborough", name:"Yorkshire, Flamborough", /* eBird hotspot: Flamborough Head--Bird Observatory Recording Area */ size:"large", zone:"coastal", hide:false, hub:false, wet:true,
+    id:"flamborough", name:"Flamborough Head", /* eBird hotspot: Flamborough Head--Bird Observatory Recording Area */ size:"large", zone:"coastal", hide:false, hub:false, wet:true,
     blurb:"",
     species:[
       sp("flamborough_carrioncrow","Carrion Crow","common","bush",0.92),
@@ -1065,7 +1065,7 @@ var SITES = {
     ]
   },
   stagnes: {
-    id:"stagnes", name:"Cornwall, St Agnes", /* eBird hotspot: St Agnes (General, please use more specific hotspot if possible) */ size:"large", zone:"coastal", hide:false, hub:false, wet:true,
+    id:"stagnes", name:"Scilly, St Agnes", /* eBird hotspot: St Agnes (General, please use more specific hotspot if possible) */ size:"large", zone:"coastal", hide:false, hub:false, wet:true,
     blurb:"",
     species:[
       sp("stagnes_coaltit","Coal Tit","common","bush",0.6),
@@ -3779,21 +3779,21 @@ function generateRoadNetwork(positions){
    learned and planned around. Positions feed the same Gabriel-graph road
    builder as before, so the resulting network is deterministic too. */
 var SITE_POSITIONS = {
-  spurn: { x:517, y:162 },
-  stmarys: { x:113, y:371 },
-  dungeness: { x:607, y:358 },
-  norfolk: { x:596, y:221 },
-  flamborough: { x:505, y:130 },
-  stagnes: { x:81, y:388 },
-  london: { x:492, y:327 },
-  rutland: { x:487, y:221 },
-  kielder: { x:340, y:23 },
-  pennines: { x:400, y:82 },
-  peak: { x:390, y:189 },
-  alvecote: { x:327, y:262 },
-  oxfordshire: { x:395, y:303 },
-  dartmoor: { x:205, y:343 },
-  shropshire: { x:266, y:206 }
+  kielder: { x:335, y:28 },
+  pennines: { x:392, y:84 },
+  flamborough: { x:578, y:118, label:"left" },
+  spurn: { x:592, y:176, label:"left" },
+  shropshire: { x:262, y:212, label:"left" },
+  peak: { x:395, y:200 },
+  rutland: { x:498, y:232 },
+  norfolk: { x:640, y:238, label:"left" },
+  alvecote: { x:335, y:275 },
+  oxfordshire: { x:405, y:327, label:"left" },
+  london: { x:505, y:343 },
+  dungeness: { x:612, y:378 },
+  dartmoor: { x:228, y:330 },
+  stmarys: { x:130, y:402 },
+  stagnes: { x:62, y:362 }
 };
 
 /* MANUAL_ROADS, when set, replaces the procedural Gabriel-graph network
@@ -4381,14 +4381,19 @@ function renderMapSvg(positions, travel, highlightId, traveledEdges, remainCount
       parts.push('<circle cx="'+p.x.toFixed(1)+'" cy="'+p.y.toFixed(1)+'" r="'+r+'" fill="'+fill+'"'+(s.hide?' stroke="'+C.icon+'" stroke-width="1"':'')+'/>');
     }
     parts.push(siteIconMarkup(siteIconKind(s), p.x, p.y, r/5, iconColor));
-    var labelX = (p.x+r+6).toFixed(1);
+    /* Labels sit to the right of the pin unless the position says
+       label:"left" — used near the map's right edge, and to keep two close
+       neighbours' names from running into each other. */
+    var labelLeft = p.label==="left";
+    var labelX = (labelLeft ? p.x-r-6 : p.x+r+6).toFixed(1);
+    var anchor = labelLeft ? ' text-anchor="end"' : '';
     var nameWeight = isCurrent?"700":"400";
     /* Uppercase, monospaced, and a touch of letter-spacing so the map
        labels read like a typewritten gazetteer rather than page prose —
        every current name is short enough to sit comfortably on one line. */
-    parts.push('<text x="'+labelX+'" y="'+(p.y+3.5).toFixed(1)+'" font-family="JetBrains Mono, monospace" font-size="10.5" letter-spacing="0.5" font-weight="'+nameWeight+'" fill="'+C.text+'">'+esc(s.name.toUpperCase())+'</text>');
+    parts.push('<text x="'+labelX+'" y="'+(p.y+3.5).toFixed(1)+'"'+anchor+' font-family="JetBrains Mono, monospace" font-size="10.5" letter-spacing="0.5" font-weight="'+nameWeight+'" fill="'+C.text+'">'+esc(s.name.toUpperCase())+'</text>');
     if(rc){
-      parts.push('<text x="'+labelX+'" y="'+(p.y+13.5).toFixed(1)+'" font-family="JetBrains Mono, monospace" font-size="8.5" fill="'+C.textMuted+'" opacity="0.9">'+rc.seen+'/'+rc.total+(closedHere?' &middot; CLOSED':'')+'</text>');
+      parts.push('<text x="'+labelX+'" y="'+(p.y+13.5).toFixed(1)+'"'+anchor+' font-family="JetBrains Mono, monospace" font-size="8.5" fill="'+C.textMuted+'" opacity="0.9">'+rc.seen+'/'+rc.total+(closedHere?' &middot; CLOSED':'')+'</text>');
     }
     if(!isCurrent && travel){
       var shortest = shortestPath(highlightId, id);

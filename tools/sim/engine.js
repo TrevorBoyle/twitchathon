@@ -32,7 +32,7 @@ function loadEngine(htmlPath, patches){
     createSmartBot, smartBotChunk, advanceSmartBot, simulateRivals, smartBotDetectionChance, smartBotIdChance,
     getLoopOptions, activeSite, distinctConfirmedCount, isNameAlreadyKnown, shortestPath, pathTotalMinutes,
     checkAutoTransitions, endGame, attemptTextIn, nextTeaBreakRestore, keepLookingEnergyCost, roadsideRaptorChance,
-    oddsSnapshot, cutoffClock, wouldCrossCutoff
+    oddsSnapshot, cutoffClock, wouldCrossCutoff, renderMapSvg, siteRemainingCounts
   };
   `;
   (patches||[]).forEach(function(pr){ if(src.indexOf(pr[0])<0) throw new Error("patch not found: "+pr[0].slice(0,60)); src = src.split(pr[0]).join(pr[1]); });
