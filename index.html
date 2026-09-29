@@ -223,7 +223,10 @@
   .hud-mid{display:flex;align-items:center;gap:10px;min-width:140px;flex:1;}
   .ebar-track{flex:1;height:9px;border-radius:5px;background:var(--line);overflow:hidden;min-width:70px;}
   .ebar-fill{height:100%;border-radius:5px;transition:width .25s ease;}
-  .hud-right{display:flex;gap:16px;font-family:'JetBrains Mono',monospace;font-size:.82rem;align-items:center;}
+  .hud-right{display:flex;gap:0;font-family:'JetBrains Mono',monospace;font-size:.82rem;align-items:stretch;}
+  .hud-right > span{padding:0 12px;border-left:1px solid var(--line);}
+  .hud-right > span:first-child{border-left:none;padding-left:0;}
+  .hud-right > span:last-child{padding-right:0;}
   .hud-right .k{color:var(--ink-soft);font-size:.78rem;text-transform:uppercase;letter-spacing:.06em;display:block;}
   .hud-right .val{display:block;font-weight:700;font-size:.92rem;color:var(--ink);margin-top:1px;}
   .hud-right .val.hero{font-size:1.25rem;font-weight:800;color:var(--accent);}
@@ -232,16 +235,27 @@
   .alerts{padding:8px 16px 0;display:flex;flex-wrap:wrap;gap:6px;}
   .onboard-hint{margin:10px 16px 0;padding:10px 12px;background:var(--accent-soft);border-radius:10px;font-size:.93rem;color:var(--ink);line-height:1.5;}
   .onboard-hint strong{color:var(--accent);}
-  .rivalbar{padding:6px 16px;background:var(--paper-2);border-bottom:1px solid var(--line);font-family:'JetBrains Mono',monospace;font-size:.78rem;color:var(--ink-soft);display:flex;gap:14px;flex-wrap:wrap;align-items:center;}
-  .rivalbar b{color:var(--ink);font-weight:700;}
-  .rivalbar-label{font-weight:700;letter-spacing:.06em;text-transform:uppercase;font-size:.78rem;color:var(--ink-soft);}
-  .rivalbar .pb{margin-left:auto;color:var(--accent);}
+  /* Three bands sit under the HUD — standings, odds, alerts — and used to
+     share one background, one type size and one rule, so they read as a
+     single grey slab. Each now has its own treatment: standings are a row
+     of team chips on the plain page ground, odds are a bordered card with
+     an eyebrow, alerts stay as pills. */
+  .rivalbar{padding:8px 16px 6px;background:var(--paper);border-bottom:1px solid var(--line);font-family:'JetBrains Mono',monospace;font-size:.76rem;color:var(--ink-soft);display:flex;gap:6px 8px;flex-wrap:wrap;align-items:center;}
+  .rivalbar-label{flex:0 0 100%;font-weight:700;letter-spacing:.08em;text-transform:uppercase;font-size:.7rem;color:var(--ink-soft);}
+  .team-chip{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);border-radius:20px;padding:2px 9px 2px 10px;background:var(--card);color:var(--ink-soft);white-space:nowrap;}
+  .team-chip b{color:var(--ink);font-weight:700;font-variant-numeric:tabular-nums;}
+  .team-chip.you{background:var(--accent);border-color:var(--accent);color:var(--paper);}
+  .team-chip.you b{color:var(--paper);}
+  .rivalbar .pb{margin-left:auto;color:var(--accent);font-weight:700;}
 
-  .oddsbar{padding:7px 16px;background:var(--paper-2);border-bottom:1px solid var(--line);font-family:'JetBrains Mono',monospace;font-size:.78rem;color:var(--ink-soft);display:flex;flex-direction:column;gap:5px;}
+  .oddsbar{margin:10px 16px 0;padding:8px 12px 10px;background:var(--card);border:1px solid var(--line);border-left:4px solid var(--accent);border-radius:0 10px 10px 0;font-family:'JetBrains Mono',monospace;font-size:.78rem;color:var(--ink-soft);display:flex;flex-direction:column;gap:6px;box-shadow:var(--shadow);}
   .oddsbar.muted{font-style:italic;}
+  .oddsbar-eyebrow{font-weight:700;letter-spacing:.08em;text-transform:uppercase;font-size:.7rem;color:var(--accent);}
+  .oddsbar-row{display:flex;flex-direction:column;gap:4px;}
+  .oddsbar-row + .oddsbar-row{border-top:1px dashed var(--line);padding-top:6px;}
   .oddsbar-line{display:flex;flex-wrap:wrap;justify-content:space-between;gap:6px;align-items:baseline;row-gap:4px;}
   .oddsbar-line .oname{color:var(--ink);font-weight:700;}
-  .oddsbar-line .opct{color:var(--ink);font-weight:700;margin-right:2px;}
+  .oddsbar-line .opct{color:var(--ink);font-weight:800;font-size:1rem;margin-right:2px;font-variant-numeric:tabular-nums;}
   .oddsbar-mods{display:flex;flex-wrap:wrap;gap:6px;}
   .modchip{display:inline-block;border-radius:20px;padding:1px 8px;font-size:.76rem;white-space:nowrap;}
   .modchip.mod-pos{background:var(--accent-soft);color:var(--accent);}
@@ -4142,17 +4156,22 @@ function renderActivityTab(){
       '</div>' +
     '</div>' +
     '<div class="rivalbar">' +
-      '<span class="rivalbar-label">Standings (word of mouth):</span>' +
-      '<span>'+esc(state.teamName)+' (You) <b>'+speciesCount+'</b></span>' +
-      RIVAL_DEFS.map(function(r){ return '<span>'+esc(r.name)+' <b>'+rivalDisplayCount(r.key)+'</b></span>'; }).join("") +
+      '<span class="rivalbar-label">Standings &middot; word of mouth</span>' +
+      '<span class="team-chip you">'+esc(state.teamName)+' <b>'+speciesCount+'</b></span>' +
+      RIVAL_DEFS.map(function(r){ return '<span class="team-chip">'+esc(r.name)+' <b>'+rivalDisplayCount(r.key)+'</b></span>'; }).join("") +
       (bestScore!==null ? '<span class="pb">Your best: '+bestScore+'</span>' : '') +
     '</div>' +
     (odds ?
       '<div class="oddsbar">' +
-        '<div class="oddsbar-line"><span class="oname">Chance of detecting something new</span><span class="opct">'+Math.round(odds.detectPct*100)+'%</span></div>' +
-        (odds.detectMods.length ? '<div class="oddsbar-mods">'+renderModChips(odds.detectMods)+'</div>' : '') +
-        '<div class="oddsbar-line"><span class="oname">Chance of identifying detected birds</span><span class="opct">'+Math.round(odds.idPct*100)+'%</span></div>' +
-        (odds.idMods.length ? '<div class="oddsbar-mods">'+renderModChips(odds.idMods)+'</div>' : '') +
+        '<div class="oddsbar-eyebrow">Odds here &middot; next quarter hour</div>' +
+        '<div class="oddsbar-row">' +
+          '<div class="oddsbar-line"><span class="oname">Detect something new</span><span class="opct">'+Math.round(odds.detectPct*100)+'%</span></div>' +
+          (odds.detectMods.length ? '<div class="oddsbar-mods">'+renderModChips(odds.detectMods)+'</div>' : '') +
+        '</div>' +
+        '<div class="oddsbar-row">' +
+          '<div class="oddsbar-line"><span class="oname">Identify what you detect</span><span class="opct">'+Math.round(odds.idPct*100)+'%</span></div>' +
+          (odds.idMods.length ? '<div class="oddsbar-mods">'+renderModChips(odds.idMods)+'</div>' : '') +
+        '</div>' +
       '</div>'
       : '<div class="oddsbar muted">Nothing here would be new for your list this visit.</div>') +
     (alerts ? '<div class="alerts">'+alerts+'</div>' : '') +
