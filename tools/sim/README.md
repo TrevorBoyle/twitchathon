@@ -64,6 +64,9 @@ edition sets its own values:
 - `SMART_MOVE_STICKINESS` — how much better a neighbouring site must look
   before a bot moves on (2.0 = twice as good).
 - `SMART_MOVE_NOISE` — how noisy a bot's read of a distant site is (±40%).
+- `ABUNDANCE.common` — per-chunk base detection for commons. 0.44 on the SA map;
+  0.30 on the UK map, so a single long loop with premium optics sweeps ~87% of a
+  site's commons rather than ~95% (short loop: ~50% rather than ~66%).
 
 After changing site data for an edition, run `exp_quick.js` against it: the
 no-gear player should win somewhere around a third of weekends, a mid

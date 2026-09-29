@@ -531,7 +531,11 @@ initTheme();
    many candidates get a look any more (see processChunk) — the numbers
    below are tuned assuming every remaining species gets an independent
    roll every 15 minutes. */
-var ABUNDANCE = { common: 0.44, uncommon: 0.352, rare: 0.092, mega: 0.018 };
+/* UK edition: commons are deliberately shyer than in the SA edition (0.30 vs 0.44) —
+   with 18 commons a site and premium optics, 0.44 had a single long loop
+   sweeping ~95% of them; 0.30 leaves about one in eight for a second pass
+   (see tools/sim/README.md). */
+var ABUNDANCE = { common: 0.30, uncommon: 0.352, rare: 0.092, mega: 0.018 };
 
 var CONFIG = {
   /* Per-hour drain (spendEnergy/spendSmartEnergy scale this down to whatever
