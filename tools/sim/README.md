@@ -19,7 +19,8 @@ node exp_bots.js                    # one weekend of rival site histories (spots
 node analytic.js                    # closed-form checks: keep-looking EV, stacking caps, weather EV
 node ui_smoke.js [file]             # renders every screen against a fake DOM, flags undefined/NaN
 node mapshot.js out.html            # writes the edition's map SVG to a standalone page for a look
-node hudshot.js out.html            # writes the Activity tab (fresh game) with the game CSS for a look
+node screenshot.js <screen> out.html # any screen (registration|activity|watch|ambiguous|travel|checklist|camp|end) with the game CSS
+node hudshot.js out.html            # the Activity tab of a fresh game (shorthand for the above)
 ```
 
 Each experiment prints one line per configuration. A game takes ~90 ms on the
