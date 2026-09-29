@@ -8,20 +8,30 @@ A browser-based birding competition game. It's Friday evening registration throu
 
 ## Regional editions
 
-`index.html` is the original South Australian game. `index-uk.html` and `index-usa.html` are regional copies of the same game engine, each currently still carrying the South Australian site set as a placeholder — populate them with a UK or USA hotspot set using the two tools below (see "Swapping in a different region"). All three files are otherwise identical and fully independent; there's no shared state between them.
+`index.html` is the original South Australian game. `index-uk.html` and `index-usa.html` are regional copies of the same game engine. The UK edition has its own hotspot set (15 sites, ~355 species); the USA edition still carries the South Australian site set as a placeholder — populate it with a USA hotspot set using the two tools below (see "Swapping in a different region"). All three files are otherwise identical and fully independent; there's no shared state between them. Each edition tunes its rival difficulty separately (`SMART_DETECT_MULT`, see "The balance harness").
 
 ## Project layout
 
 ```
 twitchathon/
 ├── index.html                 the game (South Australia)
-├── index-uk.html               regional copy — UK (placeholder SA data until populated)
+├── index-uk.html               regional copy — UK (own site set: 15 sites, ~355 species)
 ├── index-usa.html              regional copy — USA (placeholder SA data until populated)
 ├── tools/
 │   ├── location-editor.html   a companion tool for editing the site/species data
-│   └── map-editor.html        a companion tool for editing the map layout
+│   ├── map-editor.html        a companion tool for editing the map layout
+│   └── sim/                   a headless balance harness (Node) — see tools/sim/README.md
 └── README.md
 ```
+
+## The balance harness
+
+`tools/sim/` loads the real engine out of any edition's `index*.html` and plays
+whole weekends with a scripted player, so item values, skill balance and rival
+difficulty can be measured rather than guessed. `node tools/sim/exp_quick.js 40 a`
+is the one-line check to run after changing an edition's site data; the
+difficulty dials it tunes (`SMART_DETECT_MULT`, `SMART_MOVE_STICKINESS`,
+`SMART_MOVE_NOISE`) live near the rival code in each `index*.html`.
 
 ## The location editor
 
@@ -72,7 +82,7 @@ Same steps whether you're editing `index.html`, `index-uk.html`, `index-usa.html
 3. Paste that same export into `tools/map-editor.html`'s "Load a different location set" panel, drag the new locations into place, wire up roads, and copy its `SITE_POSITIONS` / `MANUAL_ROADS` export into the target file as usual.
 4. If you set any custom per-site loop lengths in the location editor, paste its optional `CONFIG.siteLoopOptions` export in too (merge the keys into the existing object) — everything else (the starting/camp site, the "wet site" list for weather, which species only turn up at night) is derived automatically from each site's own flags, so there's nothing else to hunt down by hand.
 
-`index-uk.html` and `index-usa.html` each have a comment right above their `SITES` declaration as a placeholder-data reminder — delete it once you've replaced the data.
+`index-usa.html` has a comment right above its `SITES` declaration as a placeholder-data reminder — delete it once you've replaced the data.
 
 ## Notes on the site data
 

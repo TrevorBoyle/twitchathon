@@ -553,34 +553,48 @@ var CONFIG = {
      off-trail; commons and uncommons don't need the bushbash, so they're
      untouched either way. Walk mode only — never applies to a hide sit. */
   offTrail: { energyMult: 1.45, rareDetectMult: 1.2 },
-  /* Consecutive tea breaks (no other action taken in between) restore less
-     each time, decaying toward a floor — better to space them out. */
-  teaBreak: { minutes: 25, restore: 30, restoreDecay: 0.6, restoreFloor: 10 },
+  /* A tea break within three hours of the last one is worth half as much —
+     the "rest now or push on and snack" choice this creates is the point.
+     A thermos (shop) trims the time cost. */
+  teaBreak: { minutes: 25, restore: 30, cooldownMinutes: 180, restoreOnCooldown: 15, thermosMinutes: 18 },
   snackRestore: 20,
   snackPackSize: 5,
   snackPackCostBase: 20,
+  /* Loose bars, for leftover budget — same bar as in the pack. */
+  snackBarCost: 4,
   binoculars: {
     none:    { cost: 0,  det: 0,  id: 0,  label: "Basic binoculars" },
     mid:     { cost: 30, det: 10, id: 5,  label: "Mid binoculars" },
     premium: { cost: 60, det: 20, id: 10, label: "Premium binoculars" }
   },
-  scopeCostBase: 35,
-  fieldGuideCostBase: 25,
+  scopeCostBase: 25,
+  fieldGuideCostBase: 20,
   weatherproofCostBase: 30,
-  parabolicMicCostBase: 30,
+  parabolicMicCostBase: 15,
+  headTorchCostBase: 20,
+  thermosCostBase: 15,
+  trailMapCostBase: 15,
+  alarmClockCostBase: 10,
+  campStoveCostBase: 10,
   /* Skills are no longer bought — each team is randomly handed exactly one
      for the weekend (see SKILL_DEFS), so the multipliers below still apply
      but there's no cost field on them any more. */
   youngEyes: { detBonus: 8, label: "Young eyes" },
   twitchersNose: { mult: 1.3, label: "Twitcher's nose" },
-  ironConstitution: { mult: 0.8, label: "Iron constitution" },
+  /* Iron constitution also keeps its owner in the Fresh tier down to
+     `freshFloor` energy, not just 70 — see energyTier(). */
+  ironConstitution: { mult: 0.7, freshFloor: 60, label: "Iron constitution" },
   backroads: { mult: 0.85, label: "Backroads know-how" },
   budget: 100,
+  /* Flat at the top, steep at the bottom: pushing one more loop while
+     Flagging is a legitimate call (-5%), bottoming out is not. The
+     multiplier applies to BOTH the detect and the ID roll, so Cooked is
+     0.25 combined. */
   energyTiers: [
     { min:70, max:100, name:"Fresh",             mult:1.00, tone:"good"  },
-    { min:40, max:69,  name:"Flagging",          mult:0.90, tone:"warn"  },
-    { min:15, max:39,  name:"Running on empty",  mult:0.75, tone:"warn2" },
-    { min:0,  max:14,  name:"Cooked",            mult:0.60, tone:"bad"  }
+    { min:45, max:69,  name:"Flagging",          mult:0.95, tone:"warn"  },
+    { min:20, max:44,  name:"Running on empty",  mult:0.75, tone:"warn2" },
+    { min:0,  max:19,  name:"Cooked",            mult:0.50, tone:"bad"  }
   ],
   /* One shared curve regardless of site size — a small pocket site and a
      big reserve are equally worth a second look, just with different
@@ -589,9 +603,15 @@ var CONFIG = {
      hour's uncommons back down to the ~80% cumulative target now that
      there's no per-chunk candidate cap doing that job any more. */
   timeOnSiteDecay: 0.94,
+  /* With the trail map (shop): the same curve, gentler. */
+  timeOnSiteDecayTrailMap: 0.96,
   timeOnSiteFloor: 0.15,
-  keepLooking: [ {bonus:0.15,flush:0.10}, {bonus:0.30,flush:0.18}, {bonus:0.45,flush:0.26} ],
-  keepLookingTime: 5,
+  /* "What was that?" chase: each extra look costs more time and carries a
+     higher flush risk, so pinning down a hard bird is a real coin flip
+     rather than a formality. Past the third attempt the flush chance keeps
+     climbing by keepLookingExtraFlush per look. */
+  keepLooking: [ {bonus:0.15,flush:0.10,minutes:5}, {bonus:0.30,flush:0.20,minutes:8}, {bonus:0.45,flush:0.30,minutes:10} ],
+  keepLookingExtraFlush: 0.12,
   /* One more look costs the same energy as walking that same 5 minutes
      would, just a bit steeper since you're straining to pin the bird down. */
   keepLookingEnergyMult: 1.5,
@@ -602,37 +622,51 @@ var CONFIG = {
      another still-wanted species is actually on offer at this site to
      flush alongside it (see findDoubleFlushCandidate). */
   doubleFlushChance: 0.30,
-  sleep: { tentRate:7, tentBadRate:4 },
+  /* Wake options are fixed clock times, each with its own recovery rate —
+     the early start costs energy you will feel by Sunday noon, the lie-in
+     recovers faster. Sleeping past longSleepBonusFromHours lifts Sunday's
+     energy ceiling by 1 per extra full hour (see chooseSleep). An alarm
+     clock (shop) adds a 3:30am option. */
+  sleep: {
+    tentRate:7, tentBadRate:4,
+    wakeOptions: [ { minuteOfDay:240, rate:7, badRate:4 }, { minuteOfDay:300, rate:8, badRate:5 }, { minuteOfDay:360, rate:9, badRate:6 } ],
+    alarmWake: { minuteOfDay:210, rate:7, badRate:4 },
+    longSleepBonusFromHours: 6, longSleepBonusMax: 10
+  },
   chunkMinutes: 15,
   /* Checked at most once per in-game hour (see maybeTriggerEvent's hour-
-     bucket guard) — each hour gets exactly one 20% roll, so events can
-     never land more than once an hour, and plenty of hours will pass
-     with none at all. */
-  eventChance: 0.20,
+     bucket guard) — each hour gets exactly one 30% roll, so events can
+     never land more than once an hour. A type that can't fire right now
+     gets one re-roll rather than quietly eating the hour. */
+  eventChance: 0.30,
   windows: ["Pre-dawn","Dawn chorus","Morning","Midday","Afternoon","Golden hour","Evening","Night"],
   activityMult: {
     bush:      [0.3, 1.3, 1.0, 0.5, 0.8, 1.2, 0.6, 0  ],
-    water:     [0.7, 0.9, 1.0, 1.0, 1.0, 0.9, 0.7, 0.1],
+    water:     [0.7, 0.9, 1.0, 1.0, 1.0, 0.9, 0.9, 0.3],
     raptor:    [0.1, 0.4, 0.8, 1.3, 1.0, 0.5, 0.2, 0  ],
     nocturnal: [1.0, 0,   0,   0,   0,   0,   0.8, 1.2]
   },
   saturdayEnd: 1170,
   deadline: 2070, /* Sunday, 3:00pm */
-  /* Manual "Make camp" doesn't unlock until 8pm Saturday (the automatic
+  /* Manual "Make camp" doesn't unlock until 6pm Saturday (the automatic
      transition at saturdayEnd, midnight, still applies regardless — this
-     only gates choosing to turn in early). "Call it a weekend" doesn't
+     only gates choosing to turn in early). Camping early is rewarded
+     through the long-sleep ceiling bonus (CONFIG.sleep). "Call it a weekend" doesn't
      unlock until midday Sunday, so a team can't bank the list and end the
      competition in the first few hours of the day. Rivals keep playing
      out on their own simulated clock the whole time regardless. */
-  campEarliestMinuteOfDay: 1200,
+  campEarliestMinuteOfDay: 1080,
   callItAWeekendEarliestMinuteOfDay: 720,
-  eventPool: ["rareAlert","localTip","dewyOptics","magpieSwoop","rivalEncounter","coldFront","roadworks","distantSilhouette","goldenLight","luckyBreak","secondWind","windPickup","gearFumble","chatWithLocal"],
+  eventPool: ["rareAlert","localTip","dewyOptics","magpieSwoop","rivalEncounter","coldFront","roadworks","distantSilhouette","goldenLight","luckyBreak","secondWind","windPickup","gearFumble","chatWithLocal",
+              "fogBurnsOff","trackClosed","mozzies","heatHaze","servoSpecial","secondEyes","hideTip"],
   maxDegreeSoft: 5,
   travelMinPerPx: 0.40,
   travelFloor: 30,
   travelCeiling: 150,
   travelWobble: 0.15,
-  hideSearch: { minutes: 30 },
+  /* From the hide: water birds only, but they come to you — a flat bonus
+     on water detection and no time-on-site fade while you sit. */
+  hideSearch: { minutes: 30, waterBonus: 1.3 },
   /* A wider spread of loop lengths than a flat short/long choice, so the
      walk on offer actually varies place to place — a quick 20-minute
      pass through a pocket site, a full two-hour slog around the big
@@ -678,7 +712,7 @@ var CONFIG = {
      is probably worth it. Scaled by site size, since a big reserve stays
      worth working much longer than a small pocket site. */
   travelPulseMinutesBySize: { pocket: 45, standard: 75, large: 135 },
-  confusingKeywords: ["Honeyeater","Thornbill","Weebill","Heathwren","Fairywren","Warbler","Whistler","Stint","Sandpiper","Snipe","Grasswren","Quail-thrush","Scrub-robin","Redthroat","Babbler","Grebe"],
+  confusingKeywords: ["Honeyeater","Thornbill","Weebill","Heathwren","Fairywren","Warbler","Whistler","Stint","Sandpiper","Snipe","Grasswren","Quail-thrush","Scrub-robin","Redthroat","Babbler","Grebe","Teal","Duck","Cormorant","Treecreeper","Pardalote","Robin","Crake","Rail","Plover","Dotterel","Tern","Sittella","Scrubwren","Fieldwren","Grassbird","Cisticola"],
   activityFeedLimit: 25,
   roadsideRaptor: { minMinutes: 45, maxChance: 0.32, idPenalty: 0.65 },
   /* Named event/gear multipliers pulled out of the formula functions so the
@@ -696,6 +730,15 @@ var CONFIG = {
     parabolicMicDetectMult: 1.35,
     parabolicMicIdMult: 1.25,
     scopeRaptorIdMult: 1.15,
+    fogBurnsOffMult: 1.25,
+    mozziesEnergyMult: 1.5,
+    heatHazeIdMult: 0.8,
+    secondEyesDetBonus: 8,
+    hideTipMult: 2,
+    headTorchNocturnalMult: 1.6,
+    headTorchNightBushMult: 0.15,
+    roadworksMinExtra: 15,
+    trackClosedMinutes: 240,
     goldenLightMult: 1.15,
     windPickupMult: 0.90,
     gearFumbleMult: 0.85,
@@ -710,10 +753,10 @@ var CONFIG = {
    startGame(). Kept as a lookup so both the registration reveal and the
    rival leaderboard can show the same label/description. */
 var SKILL_DEFS = [
-  { key:"youngEyes", label:"Young eyes", desc:"+"+CONFIG.youngEyes.detBonus+" flat detection, stacking with binoculars" },
-  { key:"twitchersNose", label:"Twitcher's nose", desc:"Rare and mega birds are "+Math.round((CONFIG.twitchersNose.mult-1)*100)+"% more likely to be picked up in the first place" },
-  { key:"ironConstitution", label:"Iron constitution", desc:"Cuts energy drain from watching, walking and driving by "+Math.round((1-CONFIG.ironConstitution.mult)*100)+"%" },
-  { key:"backroads", label:"Backroads know-how", desc:"Cuts every drive between sites by "+Math.round((1-CONFIG.backroads.mult)*100)+"%" }
+  { key:"youngEyes", label:"Young eyes", desc:"+"+CONFIG.youngEyes.detBonus+" flat detection, stacking with binoculars", note:"Stacks with optics, so binoculars are still the best thing you can buy." },
+  { key:"twitchersNose", label:"Twitcher's nose", desc:"Rare and mega birds are "+Math.round((CONFIG.twitchersNose.mult-1)*100)+"% more likely to be picked up in the first place", note:"Pays off most at sites with plenty of rares left; off-trail loops stack with it." },
+  { key:"ironConstitution", label:"Iron constitution", desc:"Cuts energy drain from watching, walking and driving by "+Math.round((1-CONFIG.ironConstitution.mult)*100)+"%, and stays Fresh all the way down to "+CONFIG.ironConstitution.freshFloor+" energy", note:"You'll need far fewer snacks than other teams, so put those points into optics." },
+  { key:"backroads", label:"Backroads know-how", desc:"Cuts every drive between sites by "+Math.round((1-CONFIG.backroads.mult)*100)+"%", note:"Rewards a route that visits more sites, so don't be shy about driving." }
 ];
 
 /* ============================== DATA ============================== */
@@ -1258,7 +1301,7 @@ function joinNamesAmp(names){
 /* The scope's shop-screen blurb: built from whichever sites actually have a
    farGroups entry, so it never names a site that isn't on the current map. */
 function scopeShopDesc(){
-  var idBonusText = "+" + Math.round((CONFIG.effects.scopeRaptorIdMult-1)*100) + "% ID on raptors everywhere";
+  var idBonusText = "+" + Math.round((CONFIG.effects.scopeRaptorIdMult-1)*100) + "% ID on raptors and waterbirds everywhere";
   var farIds = Object.keys(FAR_SITE_GROUPS);
   if(!farIds.length) return idBonusText;
   var names = farIds.map(function(id){ return SITES[id].name; });
@@ -1297,7 +1340,7 @@ function freshState(){
     phase: "registration",
     teamName: "",
     costs: null,
-    loadout: { binoculars:"none", snackPacks:0, scope:false, fieldGuide:false, weatherproof:false, parabolicMic:false, skill:null, youngEyes:false, twitchersNose:false, ironConstitution:false, backroads:false },
+    loadout: { binoculars:"none", snackPacks:0, snackBars:0, scope:false, fieldGuide:false, weatherproof:false, parabolicMic:false, headTorch:false, thermos:false, trailMap:false, alarmClock:false, campStove:false, skill:null, youngEyes:false, twitchersNose:false, ironConstitution:false, backroads:false },
     fatigueMult: 1,
     travel: {}, positions: {},
     day: "Saturday",
@@ -1318,10 +1361,10 @@ function freshState(){
     roadworksPending: 0,
     lastEventHour: null,
     forcedBadNight: false,
-    rivals: { counts: { galahs:0, coots:0, twitchy:0, early:0, pair:0, brains:0, bowerbirds:0 }, skills: {}, gear: {}, smart: {} },
+    rivals: { counts: { galahs:0, coots:0, twitchy:0, early:0, pair:0, brains:0, bowerbirds:0, owls:0 }, reported: {}, skills: {}, gear: {}, smart: {} },
     campSiteId: null,
     campFinishClock: null,
-    teaStreak: 0,
+    lastTeaClock: null,
     ambiguous: null,
     pendingLoop: null,
     pendingLoopEndMode: null,
@@ -1512,7 +1555,12 @@ function fmtDuration(min){
   if(h % 1 === 0) return h + " hour" + (h===1?"":"s");
   return (Math.round(h*10)/10) + " hours";
 }
-function energyTier(e){
+/* `iron` — whether this team has Iron constitution, which keeps them Fresh
+   down to CONFIG.ironConstitution.freshFloor. Defaults to the player's own
+   loadout; the rival bots pass their own skill explicitly. */
+function energyTier(e, iron){
+  if(iron===undefined) iron = !!(state && state.loadout && state.loadout.ironConstitution);
+  if(iron && e >= CONFIG.ironConstitution.freshFloor) return CONFIG.energyTiers[0];
   for(var i=0;i<CONFIG.energyTiers.length;i++){ if(e >= CONFIG.energyTiers[i].min) return CONFIG.energyTiers[i]; }
   return CONFIG.energyTiers[CONFIG.energyTiers.length-1];
 }
@@ -1524,9 +1572,10 @@ function energyTier(e){
 /* `size` is accepted but no longer used — the decay curve is shared
    across every site now; kept as a parameter so call sites don't need
    updating. */
-function timeOnSiteMult(min, size){
+function timeOnSiteMult(min, size, decay){
+  if(decay===undefined) decay = (state && state.loadout && state.loadout.trailMap) ? CONFIG.timeOnSiteDecayTrailMap : CONFIG.timeOnSiteDecay;
   var slot = Math.floor(min / CONFIG.chunkMinutes);
-  return Math.max(CONFIG.timeOnSiteFloor, Math.pow(CONFIG.timeOnSiteDecay, slot));
+  return Math.max(CONFIG.timeOnSiteFloor, Math.pow(decay, slot));
 }
 
 /* ============================== ACTIVE SITE (handles zones) ============================== */
@@ -1550,6 +1599,13 @@ function pruneEffects(){
   state.activeEffects = state.activeEffects.filter(function(e){ return e.expiresAtClock === null || e.expiresAtClock > state.clock; });
 }
 
+/* A site shut by the trackClosed event — no drives in (player or rival)
+   until the effect expires. Safe to call before a game has started. */
+function isSiteClosed(id){
+  if(!state || !state.activeEffects) return false;
+  return state.activeEffects.some(function(e){ return e.type==="trackClosed" && e.siteId===id; });
+}
+
 function getWeatherWaterVisualPenalty(site, species){
   if(state.loadout.weatherproof) return 1;
   var hasMist = state.activeEffects.some(function(e){ return e.type==="mist"; });
@@ -1569,11 +1625,15 @@ function detectionChance(site, species, bonusMult){
   var base = ABUNDANCE[species.tier];
   var wIdx = windowIndex(state.clock);
   var todMult = CONFIG.activityMult[species.group][wIdx];
+  /* A head torch turns a dead Night window into a spotlit walk — roosting
+     bush birds at a fraction of their daytime odds. */
+  if(todMult<=0 && wIdx===7 && species.group==="bush" && state.loadout.headTorch) todMult = CONFIG.effects.headTorchNightBushMult;
   if(todMult<=0) return 0;
   var weatherMult = state.weatherMult===undefined ? 1 : state.weatherMult;
   if(state.loadout.weatherproof) weatherMult = Math.max(weatherMult, CONFIG.effects.weatherproofFloor);
   weatherMult *= getWeatherWaterVisualPenalty(site, species);
-  var spotMult = 1 + state.binocDet/100;
+  var secondEyes = state.activeEffects.some(function(e){ return e.type==="secondEyes" && e.siteId===site.id; });
+  var spotMult = 1 + (state.binocDet + (secondEyes ? CONFIG.effects.secondEyesDetBonus : 0))/100;
   var eTier = energyTier(state.energy);
   var tosMult = timeOnSiteMult(state.minutesOnSite, site.size);
   var effectMult = 1;
@@ -1585,9 +1645,14 @@ function detectionChance(site, species, bonusMult){
     if(e.type==="coldFront" && e.siteId===site.id && species.group==="water") effectMult *= CONFIG.effects.coldFrontMult;
     if(e.type==="goldenLight") effectMult *= CONFIG.effects.goldenLightMult;
     if(e.type==="windPickup" && species.group==="bush") effectMult *= CONFIG.effects.windPickupMult;
+    if(e.type==="fogBurnsOff" && e.siteId===site.id && species.group==="bush") effectMult *= CONFIG.effects.fogBurnsOffMult;
   });
   if(state.loadout.twitchersNose && (species.tier==="rare"||species.tier==="mega")) effectMult *= CONFIG.twitchersNose.mult;
-  if(state.loadout.parabolicMic && species.audio) effectMult *= CONFIG.effects.parabolicMicDetectMult;
+  /* The mic picks up heard-only birds any time, and everything else in the
+     half-light windows (Pre-dawn, Evening) when birds call before you can
+     see them. */
+  if(state.loadout.parabolicMic && (species.audio || wIdx===0 || wIdx===6)) effectMult *= CONFIG.effects.parabolicMicDetectMult;
+  if(state.loadout.headTorch && species.group==="nocturnal" && (wIdx===0 || wIdx===6 || wIdx===7)) effectMult *= CONFIG.effects.headTorchNocturnalMult;
   var chance = base * todMult * weatherMult * spotMult * eTier.mult * tosMult * effectMult * bonusMult;
   return Math.min(chance, 0.95);
 }
@@ -1598,11 +1663,12 @@ function idChance(species, site, bonus){
   var eTier = energyTier(state.energy);
   var fieldGuideMult = (state.loadout.fieldGuide && isConfusing(species.name)) ? CONFIG.effects.fieldGuideMult : 1;
   var distMult = siteDistancePenalty(site, species);
-  var scopeMult = (state.loadout.scope && species.group==="raptor") ? CONFIG.effects.scopeRaptorIdMult : 1;
+  var scopeMult = (state.loadout.scope && (species.group==="raptor"||species.group==="water")) ? CONFIG.effects.scopeRaptorIdMult : 1;
   var micMult = (state.loadout.parabolicMic && species.audio) ? CONFIG.effects.parabolicMicIdMult : 1;
   var gearFumbleMult = state.activeEffects.some(function(e){ return e.type==="gearFumble"; }) ? CONFIG.effects.gearFumbleMult : 1;
+  var heatHazeMult = (!state.loadout.scope && (species.group==="raptor"||species.group==="water") && state.activeEffects.some(function(e){ return e.type==="heatHaze"; })) ? CONFIG.effects.heatHazeIdMult : 1;
   var preDawnMult = (windowIndex(state.clock)===0 && species.group!=="nocturnal") ? CONFIG.effects.preDawnNonNocturnalIdMult : 1;
-  var chance = species.idDiff * (1+bonus) * skillMult * eTier.mult * fieldGuideMult * distMult * scopeMult * micMult * gearFumbleMult * preDawnMult;
+  var chance = species.idDiff * (1+bonus) * skillMult * eTier.mult * fieldGuideMult * distMult * scopeMult * micMult * gearFumbleMult * heatHazeMult * preDawnMult;
   return clamp(chance, 0.02, 0.97);
 }
 
@@ -1643,7 +1709,10 @@ function oddsBonusMultForSite(site){
    of sync with the math the way separately-typed percentages could. */
 function oddsSnapshot(){
   var site = activeSite();
-  var candidates = site.species.filter(function(s){ return !state.confirmedThisVisit[s.id]; });
+  /* "Something new" means new to the list — a species already ticked at
+     another site can still be logged here, but it doesn't score, so it
+     doesn't count toward these odds. */
+  var candidates = site.species.filter(function(s){ return !state.confirmedThisVisit[s.id] && !isNameAlreadyKnown(s.name); });
   if(!candidates.length) return null;
 
   var eTier = energyTier(state.energy);
@@ -1665,7 +1734,15 @@ function oddsSnapshot(){
   var anyRaptor = candidates.some(function(s){ return s.group==="raptor"; });
   var anyBush = candidates.some(function(s){ return s.group==="bush"; });
   var isPreDawn = windowIndex(state.clock)===0;
+  var isEvening = windowIndex(state.clock)===6;
+  var isNight = windowIndex(state.clock)===7;
   var anyNonNocturnal = candidates.some(function(s){ return s.group!=="nocturnal"; });
+  var anyNocturnal = candidates.some(function(s){ return s.group==="nocturnal"; });
+  var anyWater = candidates.some(function(s){ return s.group==="water"; });
+  var hasFog = state.activeEffects.some(function(e){ return e.type==="fogBurnsOff" && e.siteId===site.id; });
+  var hasSecondEyes = state.activeEffects.some(function(e){ return e.type==="secondEyes" && e.siteId===site.id; });
+  var hasHideTip = state.activeEffects.some(function(e){ return e.type==="hideTip" && e.siteId===site.id; });
+  var hasHeatHaze = state.activeEffects.some(function(e){ return e.type==="heatHaze"; });
   var hasCold = state.activeEffects.some(function(e){ return e.type==="coldFront" && e.siteId===site.id; }) && candidates.some(function(s){ return s.group==="water"; });
   var distPenaltyHit = candidates.some(function(s){ return siteDistancePenalty(site, s) < 1; });
   var effectiveWeather = state.loadout.weatherproof ? Math.max(weatherBase, CONFIG.effects.weatherproofFloor) : weatherBase;
@@ -1704,8 +1781,12 @@ function oddsSnapshot(){
   if(hasGoldenLight) detectMods.push({ label:"Perfect light", pct:(CONFIG.effects.goldenLightMult-1)*100 });
   if(hasWind && anyBush) detectMods.push({ label:"Windy", pct:(CONFIG.effects.windPickupMult-1)*100 });
   if(state.loadout.twitchersNose && anyRareOrMega) detectMods.push({ label:"Twitcher's nose", pct:(CONFIG.twitchersNose.mult-1)*100 });
-  if(state.loadout.parabolicMic && anyAudio) detectMods.push({ label:"Parabolic mic", pct:(CONFIG.effects.parabolicMicDetectMult-1)*100 });
+  if(state.loadout.parabolicMic && (anyAudio || isPreDawn || isEvening)) detectMods.push({ label:(isPreDawn||isEvening) ? "Parabolic mic (half-light)" : "Parabolic mic", pct:(CONFIG.effects.parabolicMicDetectMult-1)*100 });
+  if(state.loadout.headTorch && anyNocturnal && (isPreDawn || isEvening || isNight)) detectMods.push({ label:"Head torch (nocturnal)", pct:(CONFIG.effects.headTorchNocturnalMult-1)*100 });
   if(hasCold) detectMods.push({ label:"Fallout conditions", pct:(CONFIG.effects.coldFrontMult-1)*100 });
+  if(hasFog && anyBush) detectMods.push({ label:"Fog burnt off", pct:(CONFIG.effects.fogBurnsOffMult-1)*100 });
+  if(hasSecondEyes) detectMods.push({ label:"Second pair of eyes", pct:CONFIG.effects.secondEyesDetBonus });
+  if(site.hide && anyWater) detectMods.push({ label:"From the hide (water)", pct:(CONFIG.hideSearch.waterBonus*(hasHideTip?CONFIG.effects.hideTipMult:1)-1)*100 });
   if(tipHit) detectMods.push({ label:tipHit.label, pct:(tipHit.mult-1)*100 });
 
   var idMods = [];
@@ -1713,7 +1794,8 @@ function oddsSnapshot(){
   if(eTier.mult<1) idMods.push({ label:"Energy ("+eTier.name+")", pct:(eTier.mult-1)*100 });
   if(state.loadout.fieldGuide && anyConfusing) idMods.push({ label:"Field guide", pct:(CONFIG.effects.fieldGuideMult-1)*100 });
   if(distPenaltyHit) idMods.push({ label:"Distance (no scope)", pct:(CONFIG.effects.distancePenaltyMult-1)*100 });
-  if(state.loadout.scope && anyRaptor) idMods.push({ label:"Scope (raptors)", pct:(CONFIG.effects.scopeRaptorIdMult-1)*100 });
+  if(state.loadout.scope && (anyRaptor || anyWater)) idMods.push({ label:"Scope (raptors & waterbirds)", pct:(CONFIG.effects.scopeRaptorIdMult-1)*100 });
+  if(hasHeatHaze && !state.loadout.scope && (anyRaptor || anyWater)) idMods.push({ label:"Heat haze", pct:(CONFIG.effects.heatHazeIdMult-1)*100 });
   if(state.loadout.parabolicMic && anyAudio) idMods.push({ label:"Parabolic mic (ID)", pct:(CONFIG.effects.parabolicMicIdMult-1)*100 });
   if(hasGearFumble) idMods.push({ label:"Fumbled gear", pct:(CONFIG.effects.gearFumbleMult-1)*100 });
   if(isPreDawn && anyNonNocturnal) idMods.push({ label:"Pre-dawn light", pct:(CONFIG.effects.preDawnNonNocturnalIdMult-1)*100 });
@@ -1853,7 +1935,9 @@ function handleDetection(site, spx, allowAmbiguous){
   if(allowAmbiguous === undefined) allowAmbiguous = true;
   var luckyIdx = -1;
   for(var i=0;i<state.activeEffects.length;i++){ if(state.activeEffects[i].type==="luckyBreak"){ luckyIdx=i; break; } }
-  if(luckyIdx>=0){
+  /* A lucky break is only spent on a bird that would actually be new to
+     the list — never on a repeat from another site. */
+  if(luckyIdx>=0 && !isNameAlreadyKnown(spx.name)){
     state.activeEffects.splice(luckyIdx,1);
     addToLifeList(spx, site);
     return "confirmed";
@@ -1902,12 +1986,21 @@ function processChunk(mode, bonusMult, chunkIndex, offTrail){
   var chunkStart = state.clock;
   state.clock += CONFIG.chunkMinutes;
   var chunkEnd = state.clock;
-  state.minutesOnSite += CONFIG.chunkMinutes;
+  /* Sitting in the hide doesn't wear the ground out — time-on-site fade
+     only accrues on foot. */
+  if(mode!=="hide") state.minutesOnSite += CONFIG.chunkMinutes;
   var rate = mode==="hide" ? CONFIG.energyRates.hide : CONFIG.energyRates.walk;
   /* Off the marked path the going is rougher, not just longer — costs
      noticeably more energy per minute than the same stretch on the trail
      would (see CONFIG.offTrail). */
   if(offTrail) rate *= CONFIG.offTrail.energyMult;
+  if(mode==="walk" && state.activeEffects.some(function(e){ return e.type==="mozzies" && e.siteId===site.id; })) rate *= CONFIG.effects.mozziesEnergyMult;
+  /* From the hide the water birds come to you: flat bonus on the water
+     candidates that are all this mode rolls, doubled again on a hide tip. */
+  if(mode==="hide"){
+    bonusMult *= CONFIG.hideSearch.waterBonus;
+    if(state.activeEffects.some(function(e){ return e.type==="hideTip" && e.siteId===site.id; })) bonusMult *= CONFIG.effects.hideTipMult;
+  }
   /* Fatigue ramp only bites on foot — chunkIndex counts consecutive
      15-minute chunks of this same committed walk (see startWatch). */
   var fatigueRamp = mode==="walk" ? Math.pow(CONFIG.continuousWalkFatigue, chunkIndex) : 1;
@@ -1972,7 +2065,6 @@ function processChunk(mode, bonusMult, chunkIndex, offTrail){
 
 function startWatch(mode, minutes, bonusMult, startChunkIndex, offTrail){
   if(state.ambiguous || state.ended) return;
-  state.teaStreak = 0;
   bonusMult = bonusMult || 1;
   var site = activeSite();
   if(mode==="hide" && !site.hide) mode="walk";
@@ -2043,8 +2135,15 @@ function resumePendingLoopOrRender(){
    call takes more out of you than an equivalent stretch of easy walking.
    Rounded up to the nearest whole point so it always reads (and spends)
    as a clean number rather than a fraction. */
-function keepLookingEnergyCost(){
-  return Math.ceil(CONFIG.energyRates.walk * (CONFIG.keepLookingTime/60) * CONFIG.keepLookingEnergyMult);
+function keepLookingEnergyCost(attempt){
+  var idx = Math.min(Math.max((attempt||1)-1, 0), 2);
+  return Math.ceil(CONFIG.energyRates.walk * (CONFIG.keepLooking[idx].minutes/60) * CONFIG.keepLookingEnergyMult);
+}
+/* Flush chance for a given attempt number (1-based) — the table for the
+   first three, then climbing by keepLookingExtraFlush per extra look. */
+function keepLookingFlush(attempt){
+  var idx = Math.min(attempt-1, 2);
+  return attempt<=3 ? CONFIG.keepLooking[idx].flush : CONFIG.keepLooking[2].flush + CONFIG.keepLookingExtraFlush*(attempt-3);
 }
 
 function resolveKeepLooking(){
@@ -2054,13 +2153,13 @@ function resolveKeepLooking(){
   var spx = findSpecies(amb.speciesId);
   var site = activeSite();
   amb.attempts++;
-  state.clock += CONFIG.keepLookingTime;
-  state.minutesOnSite += CONFIG.keepLookingTime;
-  spendEnergy(keepLookingEnergyCost());
-  state.teaStreak = 0;
   var idx = Math.min(amb.attempts-1, 2);
+  var lookMinutes = CONFIG.keepLooking[idx].minutes;
+  state.clock += lookMinutes;
+  state.minutesOnSite += lookMinutes;
+  spendEnergy(keepLookingEnergyCost(amb.attempts));
   var bonus = CONFIG.keepLooking[idx].bonus;
-  var flush = amb.attempts<=3 ? CONFIG.keepLooking[idx].flush : CONFIG.keepLooking[2].flush + 0.08*(amb.attempts-3);
+  var flush = keepLookingFlush(amb.attempts);
   var resolved = false;
   if(rnd() < flush){
     state.gotAway.push({ siteId: site.id, siteName: site.name, at: fmtClock(state.clock), group: spx.group, audio: spx.audio, speciesId: spx.id, speciesName: spx.name });
@@ -2082,7 +2181,6 @@ function resolveKeepLooking(){
 
 function logItAndMoveOn(){
   if(!state.ambiguous) return;
-  state.teaStreak = 0;
   var amb = state.ambiguous;
   var spx = findSpecies(amb.speciesId);
   var site = activeSite();
@@ -2119,6 +2217,7 @@ function resolveDoubleFlush(keep){
    direct road for this leg. */
 function travelHop(destId){
   if(state.ended || destId===state.currentSite) return false;
+  if(isSiteClosed(destId)){ addLog("The track into " + SITES[destId].name + " is closed — no way through for now.", "system"); return false; }
   var cost = state.travel[state.currentSite][destId];
   if(cost===undefined) return false;
   if(state.loadout.backroads) cost = Math.round(cost * CONFIG.backroads.mult);
@@ -2126,7 +2225,7 @@ function travelHop(destId){
   var edgeKey = [state.currentSite, destId].sort().join("|");
   state.traveledEdges[edgeKey] = true;
   if(state.roadworksPending>0){
-    var extraMin = Math.round(cost * state.roadworksPending);
+    var extraMin = Math.max(CONFIG.effects.roadworksMinExtra, Math.round(cost * state.roadworksPending));
     cost += extraMin;
     addLog("Roadworks slowed the drive by " + extraMin + " extra minutes (+" + Math.round(state.roadworksPending*100) + "%).", "system");
     state.roadworksPending=0;
@@ -2148,7 +2247,6 @@ function travelHop(destId){
 
 function doTravel(destId){
   if(state.ended) return;
-  state.teaStreak = 0;
   if(destId===state.currentSite) { state.sheet=null; render(); return; }
   var ok = travelHop(destId);
   state.sheet = null;
@@ -2174,7 +2272,7 @@ function shortestPath(fromId, toId){
     if(u===toId) break;
     var neighbors = state.travel[u] || {};
     Object.keys(neighbors).forEach(function(v){
-      if(visited[v]) return;
+      if(visited[v] || isSiteClosed(v)) return;
       var cost = neighbors[v];
       if(state.loadout.backroads) cost = Math.round(cost * CONFIG.backroads.mult);
       var alt = dist[u] + cost;
@@ -2212,6 +2310,7 @@ function pathTotalMinutes(path){
 function doTravelToViaShortestRoute(destId){
   if(state.ended || state.ambiguous) return;
   if(destId===state.currentSite) return;
+  if(isSiteClosed(destId)){ addLog("The track into " + SITES[destId].name + " is closed — no way through for now.", "system"); render(); return; }
   var path = shortestPath(state.currentSite, destId);
   if(!path) return;
   /* Clicking a map pin has no "disabled" state to show up front, so this
@@ -2223,7 +2322,6 @@ function doTravelToViaShortestRoute(destId){
     render();
     return;
   }
-  state.teaStreak = 0;
   for(var i=1;i<path.length;i++){
     if(state.ended) break;
     if(!travelHop(path[i])) break;
@@ -2272,8 +2370,7 @@ function maybeRoadsideRaptor(originId, destId, minutes){
 }
 
 function doChangeZone(zoneId){
-  if(state.currentSite!=="ninetymile" || zoneId===state.currentZone) { state.sheet=null; render(); return; }
-  state.teaStreak = 0;
+  if(!SITES[state.currentSite].zones || zoneId===state.currentZone) { state.sheet=null; render(); return; }
   var minutes = 20;
   state.clock += minutes;
   spendEnergy(CONFIG.energyRates.walk*minutes/60);
@@ -2292,9 +2389,16 @@ function doChangeZone(zoneId){
 /* The theoretical decayed restore for the *next* tea break, given the
    current streak — used so the button/overlay can tell the truth about
    what pressing it will actually do, before you commit to it. */
+function teaBreakMinutes(){
+  return state.loadout.thermos ? CONFIG.teaBreak.thermosMinutes : CONFIG.teaBreak.minutes;
+}
+/* A tea break within cooldownMinutes of the previous one only restores the
+   reduced amount — shared with the rival bots, who keep their own clock. */
+function teaOnCooldown(lastClock, nowClock){
+  return lastClock!=null && (nowClock - lastClock) < CONFIG.teaBreak.cooldownMinutes;
+}
 function nextTeaBreakRestore(){
-  var streak = (state.teaStreak||0) + 1;
-  return Math.max(CONFIG.teaBreak.restoreFloor, Math.round(CONFIG.teaBreak.restore * Math.pow(CONFIG.teaBreak.restoreDecay, streak-1)));
+  return teaOnCooldown(state.lastTeaClock, state.clock) ? CONFIG.teaBreak.restoreOnCooldown : CONFIG.teaBreak.restore;
 }
 /* Same, but clamped to however much headroom is actually left below the
    energy ceiling — if you're already topped up, this reads 0 rather than
@@ -2305,9 +2409,10 @@ function nextTeaBreakGain(){
 
 function doTeaBreak(){
   if(state.ended) return;
-  state.teaStreak = (state.teaStreak||0) + 1;
-  var restore = Math.max(CONFIG.teaBreak.restoreFloor, Math.round(CONFIG.teaBreak.restore * Math.pow(CONFIG.teaBreak.restoreDecay, state.teaStreak-1)));
-  state.clock += CONFIG.teaBreak.minutes;
+  var restore = nextTeaBreakRestore();
+  var minutes = teaBreakMinutes();
+  state.lastTeaClock = state.clock;
+  state.clock += minutes;
   var before = state.energy;
   state.energy = clamp(state.energy + restore, 0, state.energyCeiling);
   var gained = Math.round(state.energy - before);
@@ -2315,14 +2420,15 @@ function doTeaBreak(){
   state.activeEffects = state.activeEffects.filter(function(e){ return e.type!=="dewy"; });
   var teaMsg;
   var cappedNote = state.energyCeiling<100 ? " (still capped at "+state.energyCeiling+")" : "";
+  var span = fmtDuration(minutes);
   if(gained<=0){
-    teaMsg = "Tea break. Twenty-five minutes in the shade. You're already topped up"+cappedNote+", so there's no energy left to gain.";
+    teaMsg = "Tea break. "+span+" in the shade. You're already topped up"+cappedNote+", so there's no energy left to gain.";
   } else if(gained<restore){
-    teaMsg = "Tea break. Twenty-five minutes, tops the last +"+gained+" energy back up to "+(state.energyCeiling<100 ? "your capped max of "+state.energyCeiling : "full")+".";
+    teaMsg = "Tea break. "+span+", tops the last +"+gained+" energy back up to "+(state.energyCeiling<100 ? "your capped max of "+state.energyCeiling : "full")+".";
   } else if(restore>=CONFIG.teaBreak.restore){
-    teaMsg = "Tea break. Twenty-five minutes, and everyone feels a world better for it.";
+    teaMsg = "Tea break. "+span+", and everyone feels a world better for it.";
   } else {
-    teaMsg = "Another tea break so soon, twenty-five minutes, but it's only worth +"+restore+" energy this time.";
+    teaMsg = "Another tea break within three hours of the last — "+span+", but only worth +"+restore+" energy this time.";
   }
   addLog(teaMsg, "tea");
   simulateRivals(state.clock);
@@ -2332,7 +2438,6 @@ function doTeaBreak(){
 
 function eatSnack(){
   if(state.ended || state.snackBars<=0) return;
-  state.teaStreak = 0;
   state.snackBars -= 1;
   state.energy = clamp(state.energy + CONFIG.snackRestore, 0, state.energyCeiling);
   if(state.ambiguous){ addLog("A snack on the move, and the chase is dropped.", "system"); state.ambiguous=null; }
@@ -2355,11 +2460,22 @@ function maybeTriggerEvent(context){
   if(state.lastEventHour === hourBucket) return;
   state.lastEventHour = hourBucket;
   if(rnd() > CONFIG.eventChance) return;
+  /* A type that can't fire right now (dew after 10am, perfect light at
+     night, a tip with nothing left to point at, a servo special away from
+     the road) gets one re-roll instead of quietly eating the hour. */
   var type = pick(CONFIG.eventPool);
+  if(!fireEvent(type, context)){
+    var again = pick(CONFIG.eventPool.filter(function(t){ return t!==type; }));
+    fireEvent(again, context);
+  }
+}
+
+/* Runs one event type; returns false if it couldn't apply right now. */
+function fireEvent(type, context){
   switch(type){
     case "rareAlert": {
       var pool = FLAT_SPECIES.filter(function(f){ return (f.species.tier==="rare"||f.species.tier==="mega") && !state.confirmed[f.species.id]; });
-      if(!pool.length) return;
+      if(!pool.length) return false;
       var f = pick(pool);
       /* Mega alerts run shorter than rare ones — the detection boost they
          carry (12x, vs. 3x for a rare) is so large that giving it the same
@@ -2373,7 +2489,7 @@ function maybeTriggerEvent(context){
     }
     case "localTip": {
       var pool2 = FLAT_SPECIES.filter(function(f){ return f.species.tier==="uncommon" && !state.confirmed[f.species.id]; });
-      if(!pool2.length) return;
+      if(!pool2.length) return false;
       var f2 = pick(pool2);
       /* No time limit at all — this one stands until the bird's ticked,
          the weekend ends, or an overnight camp clears every effect. */
@@ -2384,7 +2500,7 @@ function maybeTriggerEvent(context){
     case "dewyOptics": {
       /* Only ever rolls in the early-morning window, and now capped at a
          flat hour regardless of when your next tea break falls. */
-      if(minuteOfDay(state.clock) >= 600) return;
+      if(minuteOfDay(state.clock) >= 600) return false;
       state.activeEffects = state.activeEffects.filter(function(e){ return e.type!=="dewy"; });
       state.activeEffects.push({ type:"dewy", expiresAtClock: state.clock+60, label:"Fogged optics" });
       addLog("Morning mist fogs the bins — detection's down 15% for up to the next hour, or until your next tea break, whichever comes first.", "event");
@@ -2400,7 +2516,12 @@ function maybeTriggerEvent(context){
       simulateRivals(state.clock);
       var who = pick(RIVAL_DEFS);
       var whereText = context==="road" ? "at a servo on the drive" : "at " + activeSite().name;
-      addLog('Cross paths with "' + who.name + '" ' + whereText + " — sitting on " + state.rivals.counts[who.key] + " species, by their own account.", "event");
+      /* Word of mouth is the only exact read on a rival between camps —
+         the live standings bar rounds everything else (see rivalDisplayCount). */
+      var whoBot = state.rivals.smart[who.key];
+      state.rivals.reported[who.key] = { count: state.rivals.counts[who.key], clock: state.clock };
+      var headingText = whoBot && whoBot.travelDest ? " and heading for " + SITES[whoBot.travelDest].name + " next" : (whoBot ? " and working " + SITES[whoBot.siteId].name + " for now" : "");
+      addLog('Cross paths with "' + who.name + '" ' + whereText + " — sitting on " + state.rivals.counts[who.key] + " species, by their own account" + headingText + ".", "event");
       break;
     }
     case "coldFront": {
@@ -2424,12 +2545,14 @@ function maybeTriggerEvent(context){
       var pool3 = site3.species.filter(function(s){ return !state.confirmed[s.id]; });
       var groupPool3 = pool3.filter(function(s){ return s.group===preferredGroup; });
       var spx3 = (groupPool3.length ? pick(groupPool3) : (pool3.length ? pick(pool3) : null));
+      /* It really is gone: whatever it was won't roll again this visit. */
+      if(spx3) state.confirmedThisVisit[spx3.id] = true;
       state.gotAway.push({
         siteId: site3.id, siteName: site3.name, at: fmtClock(state.clock),
         group: spx3 ? spx3.group : preferredGroup, audio: spx3 ? spx3.audio : rnd()<0.4,
         speciesId: spx3 ? spx3.id : null, speciesName: spx3 ? spx3.name : null
       });
-      addLog("A shape crosses high overhead, or calls once from way off — gone before anyone can say what it was. No detect roll, no ID chance: straight onto the one-that-got-away list.", "event");
+      addLog("A shape crosses high overhead, or calls once from way off — gone before anyone can say what it was. No detect roll, no ID chance: straight onto the one-that-got-away list, and whatever it was won't show again this visit.", "event");
       break;
     }
     case "goldenLight": {
@@ -2437,7 +2560,7 @@ function maybeTriggerEvent(context){
          the roll during Pre-dawn or Night, same way dewyOptics above
          only rolls in its own early-morning window. */
       var glWindow = windowIndex(state.clock);
-      if(glWindow===0 || glWindow===7) return;
+      if(glWindow===0 || glWindow===7) return false;
       var glDur = 30;
       state.activeEffects = state.activeEffects.filter(function(e){ return e.type!=="goldenLight"; });
       state.activeEffects.push({ type:"goldenLight", expiresAtClock: state.clock+glDur, label:"Perfect light" });
@@ -2474,15 +2597,74 @@ function maybeTriggerEvent(context){
     case "chatWithLocal":
       addLog("A local walks past and stops for a chat — no birding tips, but a nice few minutes all the same.", "event");
       break;
+    case "fogBurnsOff": {
+      var fbWin = windowIndex(state.clock);
+      if(fbWin!==1 && fbWin!==2) return false;
+      var fbSite = activeSite();
+      state.activeEffects = state.activeEffects.filter(function(e){ return e.type!=="fogBurnsOff"; });
+      state.activeEffects.push({ type:"fogBurnsOff", siteId: fbSite.id, expiresAtClock: state.clock+60, label:"Fog burnt off" });
+      addLog("The last of the fog burns off and the scrub wakes up — bush-bird detection here is up " + Math.round((CONFIG.effects.fogBurnsOffMult-1)*100) + "% for the next hour.", "event");
+      break;
+    }
+    case "trackClosed": {
+      var tcPool = SITE_IDS.filter(function(id){ return id!==state.currentSite && id!==HUB_SITE_ID && !isSiteClosed(id); });
+      if(!tcPool.length) return false;
+      var tcId = pick(tcPool);
+      state.activeEffects.push({ type:"trackClosed", siteId: tcId, expiresAtClock: state.clock+CONFIG.effects.trackClosedMinutes, label:"Closed: "+SITES[tcId].name });
+      addLog("Word comes through that the track into <b>" + SITES[tcId].name + "</b> is closed — no access for the next " + fmtDuration(CONFIG.effects.trackClosedMinutes) + ".", "event");
+      break;
+    }
+    case "mozzies": {
+      var mzWin = windowIndex(state.clock);
+      var mzSite = activeSite();
+      if((mzWin!==6 && mzWin!==7) || !WET_SITE_IDS[mzSite.id]) return false;
+      state.activeEffects = state.activeEffects.filter(function(e){ return e.type!=="mozzies"; });
+      state.activeEffects.push({ type:"mozzies", siteId: mzSite.id, expiresAtClock: state.clock+90, label:"Mozzies" });
+      addLog("The mozzies come up off the water in clouds — walking here burns " + Math.round((CONFIG.effects.mozziesEnergyMult-1)*100) + "% more energy for the next 90 minutes." + (mzSite.hide ? " The hide, at least, has a door." : ""), "event");
+      break;
+    }
+    case "heatHaze": {
+      if(windowIndex(state.clock)!==3) return false;
+      state.activeEffects = state.activeEffects.filter(function(e){ return e.type!=="heatHaze"; });
+      state.activeEffects.push({ type:"heatHaze", expiresAtClock: state.clock+120, label:"Heat haze" });
+      addLog(state.loadout.scope
+        ? "Heat haze shimmers over the flats — anything distant is a wobble. The scope cuts straight through it; no penalty for you."
+        : "Heat haze shimmers over the flats — raptor and water-bird ID is down " + Math.round((1-CONFIG.effects.heatHazeIdMult)*100) + "% for the next 2 hours. A scope would have cut through it.", "event");
+      break;
+    }
+    case "servoSpecial": {
+      if(context!=="road") return false;
+      var gainBars = state.snackBars>0 ? 1 : 2;
+      state.snackBars += gainBars;
+      addLog("The servo&rsquo;s got a two-for-one on muesli bars — +" + gainBars + " snack" + (gainBars===1?"":"s") + " for the pack.", "event");
+      break;
+    }
+    case "secondEyes": {
+      var seSite = activeSite();
+      state.activeEffects = state.activeEffects.filter(function(e){ return e.type!=="secondEyes"; });
+      state.activeEffects.push({ type:"secondEyes", siteId: seSite.id, expiresAtClock: state.clock+120, label:"Second pair of eyes" });
+      addLog("A local birder falls in with the team for a couple of hours — a second pair of eyes, +" + CONFIG.effects.secondEyesDetBonus + " detection here for the next 2 hours.", "event");
+      break;
+    }
+    case "hideTip": {
+      var htSite = activeSite();
+      if(!htSite.hide) return false;
+      state.activeEffects = state.activeEffects.filter(function(e){ return e.type!=="hideTip"; });
+      state.activeEffects.push({ type:"hideTip", siteId: htSite.id, expiresAtClock: state.clock+60, label:"Hide tip" });
+      addLog("Someone leaving the hide says the water's alive right now — water-bird detection <b>from the hide</b> is doubled for the next hour.", "event");
+      break;
+    }
   }
+  return true;
 }
 
 /* ---- rivals ---- */
-/* Seven other teams on the map, each running a different weekend plan.
-   Their species counts are an abstraction (not tied to the real site
-   data or detection odds) but each formula reflects how that plan
-   would actually play out: breadth vs. depth, patience vs. impulse,
-   dawn specialism vs. no plan at all. */
+/* Eight other teams on the map, each running a different weekend plan.
+   Every one is a real bot walking the same site graph with the same
+   detection/ID math as the player (see smartBotDetectionChance) — what
+   differs is purely the decision policy in smartBotChooseMove: breadth vs.
+   depth, patience vs. impulse, dawn specialism, the late shift, or no plan
+   at all. */
 /* Random fallback team names, assigned if the player leaves the field blank. */
 var RANDOM_TEAM_NAMES = ["Canaries in the Coalmine","Tarred and Feathered","Road Chickens","Worm Getters","Time for a Murder","Thunderbirds","Let's Get Twitchy"];
 
@@ -2493,12 +2675,13 @@ var RIVAL_DEFS = [
   { key:"early",      name:"The Early Birds",          tag:"The Dawn Patrol",    desc:"up before first light, running out of steam well before lunch" },
   { key:"pair",       name:"What a lovely pair of..?", tag:"The Specialists",    desc:"beeline for the richest sites and settle in, barely stopping anywhere else" },
   { key:"brains",     name:"Bird Brains",              tag:"The Wanderers",      desc:"no real plan, just enthusiasm — somehow it mostly works out" },
-  { key:"bowerbirds", name:"The Bowerbirds",           tag:"The Collectors",     desc:"won't leave a site until every common and uncommon species there is ticked off — the rares can wait" }
+  { key:"bowerbirds", name:"The Bowerbirds",           tag:"The Collectors",     desc:"won't leave a site until every common and uncommon species there is ticked off — the rares can wait" },
+  { key:"owls",       name:"The Night Owls",           tag:"The Late Shift",     desc:"turn in at dusk and are back out before anyone else, owling from half three until first light" }
 ];
 
 /* Fixed avatar colors per rival (plus the player) — decorative, not tied to
    the light/dark palette, so they read consistently on either theme. */
-var AVATAR_COLORS = { you:"#3f6b46", galahs:"#c1692c", coots:"#7a5ba6", twitchy:"#a5402f", early:"#3f76a8", pair:"#9c7a1f", brains:"#4f8f6b", bowerbirds:"#8a5a3f" };
+var AVATAR_COLORS = { you:"#3f6b46", galahs:"#c1692c", coots:"#7a5ba6", twitchy:"#a5402f", early:"#3f76a8", pair:"#9c7a1f", brains:"#4f8f6b", bowerbirds:"#8a5a3f", owls:"#4a5f9a" };
 function avatarMarkup(name, colorKey){
   var initial = (name||"?").trim().charAt(0).toUpperCase() || "?";
   return '<span class="avatar" style="background:'+(AVATAR_COLORS[colorKey]||"#6b6247")+'">'+esc(initial)+'</span>';
@@ -2512,12 +2695,35 @@ function avatarMarkup(name, colorKey){
    a loop it commits to, and how stubborn it is about moving on. */
 
 var SMART_CHUNK = CONFIG.chunkMinutes;
-var SMART_LOW_ENERGY = 30;
-var SMART_LOW_ENERGY_BY_KEY = { brains: 20 };
+/* Rivals rest before they fall out of Fresh, like a competent human — the
+   Wanderers are sloppier. Always capped below a bot's own energy ceiling
+   (the Dawn Patrol's is 55 in the afternoon) so nobody tea-breaks forever. */
+var SMART_LOW_ENERGY = 60;
+var SMART_LOW_ENERGY_BY_KEY = { brains: 40 };
+/* How much better a neighbouring site has to look before a bot moves on
+   (1 = break-even), and how noisy its read of that site is. These two are
+   the main difficulty dials for the field. */
+var SMART_MOVE_STICKINESS = 2.0;
+var SMART_MOVE_NOISE = 0.4;
+/* Flat handicap on every rival detection roll — the one-number difficulty
+   dial for the whole field. 1.0 = rivals see exactly what the player would;
+   editions with much richer site lists (UK) need it below 1 or the bots'
+   patient full-loop plan outscores any human. */
+var SMART_DETECT_MULT = 1.0;
 
-function smartBotLowEnergyThreshold(key){
-  return SMART_LOW_ENERGY_BY_KEY[key]!==undefined ? SMART_LOW_ENERGY_BY_KEY[key] : SMART_LOW_ENERGY;
+function smartBotLowEnergyThreshold(key, bot){
+  var t = SMART_LOW_ENERGY_BY_KEY[key]!==undefined ? SMART_LOW_ENERGY_BY_KEY[key] : SMART_LOW_ENERGY;
+  return Math.min(t, (bot ? bot.energyCeiling : 100) - 10);
 }
+
+/* Rivals camp too. Everyone turns in at the midnight cutoff and is back out
+   at 4am, except the Night Owls, who camp at 6pm and wake at 3:30am on a
+   110 ceiling — the late-shift plan. */
+var RIVAL_CAMP = {
+  campClock: CONFIG.saturdayEnd,
+  wakeClock: nextOccurrenceOfMinuteOfDay(CONFIG.saturdayEnd + 60, 240),
+  owls: { campClock: 1080 - 270, wakeClock: nextOccurrenceOfMinuteOfDay(1080 - 270 + 60, 210), ceiling: 110 }
+};
 
 function createSmartBot(key){
   var gear = state.rivals.gear[key] || { binoculars:"none", scope:false, fieldGuide:false, weatherproof:false, parabolicMic:false };
@@ -2529,7 +2735,9 @@ function createSmartBot(key){
     energy: 100,
     energyCeiling: 100,
     minutesOnSite: 0,
-    teaStreak: 0,
+    lastTeaClock: null,
+    prevSiteId: null,
+    camped: false,
     loopsHere: 0,
     confirmedNames: {},
     phase: "decide",
@@ -2594,23 +2802,23 @@ function smartBotDetectionChance(bot, site, species){
   var hasMist = state.activeEffects.some(function(e){ return e.type==="mist"; });
   if(hasMist && WET_SITE_IDS[site.id] && species.group==="water" && !species.audio && !bot.gear.weatherproof) weatherMult *= CONFIG.effects.mistWaterMult;
   var spotMult = 1 + bot.binocDet/100;
-  var eTier = energyTier(bot.energy);
-  var tosMult = timeOnSiteMult(bot.minutesOnSite, site.size);
+  var eTier = energyTier(bot.energy, bot.skill==="ironConstitution");
+  var tosMult = timeOnSiteMult(bot.minutesOnSite, site.size, CONFIG.timeOnSiteDecay);
   var effectMult = 1;
   var coldFront = state.activeEffects.some(function(e){ return e.type==="coldFront" && e.siteId===site.id && species.group==="water"; });
   if(coldFront) effectMult *= CONFIG.effects.coldFrontMult;
   if(bot.skill==="twitchersNose" && (species.tier==="rare"||species.tier==="mega")) effectMult *= CONFIG.twitchersNose.mult;
-  if(bot.gear.parabolicMic && species.audio) effectMult *= CONFIG.effects.parabolicMicDetectMult;
-  var chance = base * todMult * weatherMult * spotMult * eTier.mult * tosMult * effectMult * (bot.loopBonus||1);
+  if(bot.gear.parabolicMic && (species.audio || wIdx===0 || wIdx===6)) effectMult *= CONFIG.effects.parabolicMicDetectMult;
+  var chance = base * todMult * weatherMult * spotMult * eTier.mult * tosMult * effectMult * (bot.loopBonus||1) * SMART_DETECT_MULT;
   return Math.min(chance, 0.95);
 }
 
 function smartBotIdChance(bot, site, species){
   var skillMult = 1 + bot.binocId/100;
-  var eTier = energyTier(bot.energy);
+  var eTier = energyTier(bot.energy, bot.skill==="ironConstitution");
   var fieldGuideMult = (bot.gear.fieldGuide && isConfusing(species.name)) ? CONFIG.effects.fieldGuideMult : 1;
   var distMult = smartBotDistancePenalty(bot, site, species);
-  var scopeMult = (bot.gear.scope && species.group==="raptor") ? CONFIG.effects.scopeRaptorIdMult : 1;
+  var scopeMult = (bot.gear.scope && (species.group==="raptor"||species.group==="water")) ? CONFIG.effects.scopeRaptorIdMult : 1;
   var micMult = (bot.gear.parabolicMic && species.audio) ? CONFIG.effects.parabolicMicIdMult : 1;
   var preDawnMult = (windowIndex(bot.clock)===0 && species.group!=="nocturnal") ? CONFIG.effects.preDawnNonNocturnalIdMult : 1;
   var chance = species.idDiff * skillMult * eTier.mult * fieldGuideMult * distMult * scopeMult * micMult * preDawnMult;
@@ -2630,12 +2838,20 @@ function smartBotLoopKey(key, keys){
 
 function startSmartBotLoop(key, bot){
   var site = SITES[bot.siteId];
-  bot.minutesOnSite = 0;
-  if(site.hide){
+  /* minutesOnSite is NOT reset here — like the player's, it only resets on
+     arrival, so a bot that grinds one site pays the same fade. */
+  /* The hide only shows water birds, so a bot sits in it only while most of
+     what it still wants here is on the water — otherwise it walks the loop.
+     (Used to sit in the hide forever once the water was cleaned out, with
+     the bush birds it could never see from there holding it in place.) */
+  var unseenAll = 0, unseenWater = 0;
+  site.species.forEach(function(sp){ if(!bot.confirmedNames[sp.name]){ unseenAll++; if(sp.group==="water") unseenWater++; } });
+  var useHide = site.hide && unseenAll>0 && unseenWater >= unseenAll*0.5;
+  if(useHide){
     bot.phase = "loop";
     bot.loopMode = "hide";
     bot.loopRemaining = CONFIG.hideSearch.minutes;
-    bot.loopBonus = 1;
+    bot.loopBonus = CONFIG.hideSearch.waterBonus;
   } else {
     var keys = getLoopOptions(site);
     var loopKey = smartBotLoopKey(key, keys);
@@ -2655,6 +2871,7 @@ function startSmartBotLoop(key, bot){
 }
 
 function startSmartBotTravel(bot, destId, cost){
+  bot.prevSiteId = bot.siteId;
   if(bot.skill==="backroads") cost = Math.round(cost * CONFIG.backroads.mult);
   bot.phase = "travel";
   bot.travelRemaining = cost;
@@ -2664,16 +2881,37 @@ function startSmartBotTravel(bot, destId, cost){
 /* The richness-greedy fallback nearly every archetype leans on somewhere:
    the richest directly-reachable site beats staying, ties broken by the
    shorter drive; otherwise keep working the loop right here. */
+/* Rough expected yield of a site for this bot: abundance-weighted count of
+   what it hasn't seen there, faded by however long it has already been
+   working the place. A fresh site with ten uncommons beats a worn-out one
+   with fifteen rares left, which is the judgment a human makes. */
+function siteYieldEstimate(siteId, confirmedNames, minutesOnSite){
+  var s = SITES[siteId];
+  if(!s || s.zones) return 0;
+  var tos = timeOnSiteMult(minutesOnSite||0, s.size, CONFIG.timeOnSiteDecay);
+  var sum = 0;
+  s.species.forEach(function(sp){ if(!confirmedNames[sp.name]) sum += ABUNDANCE[sp.tier]; });
+  return sum * tos;
+}
+
 function smartBotRichestNeighborOrStay(key, bot, travelTable, reachable, hereRichness){
   var best = null;
+  var hereScore = siteYieldEstimate(bot.siteId, bot.confirmedNames, bot.minutesOnSite);
   reachable.forEach(function(id2){
-    var richness2 = countUnseenAtSite(id2, bot.confirmedNames);
-    if(richness2<=0) return;
-    if(!best || richness2>best.richness || (richness2===best.richness && travelTable[id2]<best.cost)){
-      best = { id:id2, richness:richness2, cost: travelTable[id2] };
+    if(countUnseenAtSite(id2, bot.confirmedNames)<=0) return;
+    /* Fresh odds there, discounted by the drive; and don't shuttle straight
+       back to where you just came from unless there's genuinely nowhere else. */
+    var score = siteYieldEstimate(id2, bot.confirmedNames, 0) / (1 + travelTable[id2]/90);
+    /* A human's read of a distant site is a guess, and moving has a cost
+       of its own — so the estimate is noisy and the bar to leave is higher
+       than break-even (SMART_MOVE_STICKINESS). */
+    score *= randRange(1-SMART_MOVE_NOISE, 1+SMART_MOVE_NOISE);
+    if(id2===bot.prevSiteId && reachable.length>1) score *= 0.5;
+    if(!best || score>best.score){
+      best = { id:id2, score:score, cost: travelTable[id2] };
     }
   });
-  if(best && (hereRichness<=0 || best.richness>hereRichness)){
+  if(best && (hereRichness<=0 || best.score>hereScore*SMART_MOVE_STICKINESS)){
     startSmartBotTravel(bot, best.id, best.cost);
   } else {
     startSmartBotLoop(key, bot);
@@ -2685,20 +2923,20 @@ function smartBotRichestNeighborOrStay(key, bot, travelTable, reachable, hereRic
 function smartBotChooseMove(key, bot){
   var hereRichness = countUnseenAtSite(bot.siteId, bot.confirmedNames);
   var travelTable = state.travel[bot.siteId] || {};
-  var reachable = Object.keys(travelTable).filter(function(id2){ return id2!==bot.siteId; });
+  var reachable = Object.keys(travelTable).filter(function(id2){ return id2!==bot.siteId && !isSiteClosed(id2); });
 
   if(key==="twitchy"){
     /* Chasers: the first whisper of a rare bird or a local tip and they're
-       gone, whatever's left where they're standing. */
+       gone, whatever's left where they're standing — even if it's several
+       roads away (one hop at a time along the shortest route). */
     var chase = null;
     state.activeEffects.forEach(function(e){
-      if((e.type==="rareAlert"||e.type==="localTip") && e.siteId && e.siteId!==bot.siteId && travelTable[e.siteId]!==undefined){
-        chase = e.siteId;
-      }
+      if((e.type==="rareAlert"||e.type==="localTip") && e.siteId && e.siteId!==bot.siteId && !isSiteClosed(e.siteId)) chase = e.siteId;
     });
     if(chase && rnd()<0.7){
-      startSmartBotTravel(bot, chase, travelTable[chase]);
-      return;
+      var chasePath = shortestPath(bot.siteId, chase);
+      var hop = chasePath && chasePath.length>1 ? chasePath[1] : null;
+      if(hop && travelTable[hop]!==undefined){ startSmartBotTravel(bot, hop, travelTable[hop]); return; }
     }
   }
 
@@ -2710,6 +2948,7 @@ function smartBotChooseMove(key, bot){
       reachable.forEach(function(id2){
         var richness2 = countUnseenAtSite(id2, bot.confirmedNames);
         if(richness2<=0) return;
+        if(id2===bot.prevSiteId && reachable.length>1) return; /* no shuttling back and forth */
         if(!nearest || travelTable[id2]<travelTable[nearest]) nearest = id2;
       });
       if(nearest){ startSmartBotTravel(bot, nearest, travelTable[nearest]); return; }
@@ -2732,8 +2971,9 @@ function smartBotChooseMove(key, bot){
 
   if(key==="coots"){
     /* Completionists: pick a spot and grind it out until there's nothing
-       left to find, then move. */
-    if(hereRichness>0){ startSmartBotLoop(key, bot); return; }
+       left to find, then move — but even they give up after four loops
+       here, or the last few rares would hold them all weekend. */
+    if(hereRichness>0 && (bot.loopsHere||0)<4){ startSmartBotLoop(key, bot); return; }
   }
 
   if(key==="bowerbirds"){
@@ -2741,7 +2981,7 @@ function smartBotChooseMove(key, bot){
        is ticked off. Unlike the Completionists, a rare or mega sitting
        unconfirmed doesn't hold them — once the basics are done, they move,
        whatever else might still be out there. */
-    if(countUnseenBasicAtSite(bot.siteId, bot.confirmedNames)>0){ startSmartBotLoop(key, bot); return; }
+    if(countUnseenBasicAtSite(bot.siteId, bot.confirmedNames)>0 && (bot.loopsHere||0)<4){ startSmartBotLoop(key, bot); return; }
   }
 
   /* pair falls straight in here every time; coots, galahs, twitchy and
@@ -2750,6 +2990,25 @@ function smartBotChooseMove(key, bot){
 }
 
 function smartBotChunk(key, bot){
+  /* Camp: once past this team's turn-in time, jump straight to their wake
+     time with a night's recovery banked (same tent rate as the player's
+     good night), and pick up wherever they were heading. */
+  var campAt = key==="owls" ? RIVAL_CAMP.owls.campClock : RIVAL_CAMP.campClock;
+  if(!bot.camped && bot.clock >= campAt){
+    var wakeAt = key==="owls" ? RIVAL_CAMP.owls.wakeClock : RIVAL_CAMP.wakeClock;
+    var slept = Math.max(0, (wakeAt - (campAt + 60)) / 60);
+    bot.camped = true;
+    if(bot.phase==="travel" && bot.travelDest){ bot.siteId = bot.travelDest; bot.travelDest = null; }
+    if(key==="owls") bot.energyCeiling = RIVAL_CAMP.owls.ceiling;
+    bot.energy = clamp(bot.energy + slept*CONFIG.sleep.tentRate, 0, bot.energyCeiling);
+    bot.clock = wakeAt;
+    bot.phase = "decide";
+    bot.minutesOnSite = 0;
+    bot.loopsHere = 0;
+    bot.lastTeaClock = null;
+    return;
+  }
+
   if(key==="early"){
     /* Fading fast once the sun's up: a lower ceiling in the afternoon/
        evening means they're stuck in "Flagging" rather than "Fresh" no
@@ -2760,15 +3019,15 @@ function smartBotChunk(key, bot){
   }
 
   if(bot.phase==="decide"){
-    if(bot.energy < smartBotLowEnergyThreshold(key)) bot.phase = "tea";
+    if(bot.energy < smartBotLowEnergyThreshold(key, bot)) bot.phase = "tea";
     else smartBotChooseMove(key, bot);
   }
 
   bot.clock += SMART_CHUNK;
 
   if(bot.phase==="tea"){
-    bot.teaStreak = (bot.teaStreak||0) + 1;
-    var restore = Math.max(CONFIG.teaBreak.restoreFloor, Math.round(CONFIG.teaBreak.restore * Math.pow(CONFIG.teaBreak.restoreDecay, bot.teaStreak-1)));
+    var restore = teaOnCooldown(bot.lastTeaClock, bot.clock) ? CONFIG.teaBreak.restoreOnCooldown : CONFIG.teaBreak.restore;
+    bot.lastTeaClock = bot.clock;
     bot.energy = clamp(bot.energy + restore, 0, bot.energyCeiling);
     bot.clock += Math.max(0, CONFIG.teaBreak.minutes - SMART_CHUNK);
     bot.phase = "decide";
@@ -2781,7 +3040,7 @@ function smartBotChunk(key, bot){
     if(bot.travelRemaining<=0){
       bot.siteId = bot.travelDest;
       bot.travelDest = null;
-      bot.teaStreak = 0;
+      bot.minutesOnSite = 0;
       bot.loopsHere = 0;
       bot.phase = "decide";
     }
@@ -2792,8 +3051,12 @@ function smartBotChunk(key, bot){
     var site = SITES[bot.siteId];
     var rate = bot.loopMode==="hide" ? CONFIG.energyRates.hide : CONFIG.energyRates.walk;
     spendSmartEnergy(bot, rate*SMART_CHUNK/60);
-    bot.minutesOnSite += SMART_CHUNK;
+    if(bot.loopMode!=="hide") bot.minutesOnSite += SMART_CHUNK;
+    /* The Collectors really don't look for rares — "the rares can wait" —
+       which is what keeps their tick-the-basics-and-move plan honest. */
+    var basicsOnly = key==="bowerbirds";
     var candidates = shuffle(site.species.filter(function(sp){
+      if(basicsOnly && (sp.tier==="rare"||sp.tier==="mega")) return false;
       return !bot.confirmedNames[sp.name] && (bot.loopMode!=="hide" || sp.group==="water");
     }));
     for(var i=0;i<candidates.length;i++){
@@ -2804,7 +3067,6 @@ function smartBotChunk(key, bot){
     }
     bot.loopRemaining -= SMART_CHUNK;
     if(bot.loopRemaining<=0){
-      bot.teaStreak = 0;
       bot.phase = "decide";
     }
     return;
@@ -2834,8 +3096,10 @@ var WEATHER = [
   { id:"mist", label:"Mist over the flats", mult:0.9 },
   { id:"southerly", label:"Strong southerly", mult:0.87 }
 ];
-function rollWeather(){
-  var w = pick(WEATHER);
+/* `preset` — the Saturday roll made at registration (shown on the shop
+   screen so the weatherproof kit is an informed bet); Sunday rolls fresh. */
+function rollWeather(preset){
+  var w = preset || pick(WEATHER);
   state.weatherMult = w.mult;
   state.weatherLabel = w.label;
   if(w.id==="mist") state.activeEffects.push({ type:"mist", expiresAtClock: state.clock+240, label:"Misty" });
@@ -2879,18 +3143,25 @@ function enterCamp(){
   render();
 }
 
-/* Wake-up choices are fixed clock times (4am / 5am / 6am) rather than
-   fixed sleep durations — how many hours that actually takes depends on
-   when camp was finished being made (see enterCamp), which can now be
-   any time from 8pm on, not just midnight. */
-var WAKE_OPTIONS = [240, 300, 360]; /* minuteOfDay for 4am, 5am, 6am */
-
+/* Wake-up choices are fixed clock times (4am / 5am / 6am, plus 3:30am
+   with an alarm clock) rather than fixed sleep durations — how many hours
+   that actually takes depends on when camp was finished being made (see
+   enterCamp), which can be any time from 6pm on. Each option carries its
+   own recovery rate (CONFIG.sleep.wakeOptions). */
 function wakeOptions(){
   var from = state.campFinishClock!=null ? state.campFinishClock : CONFIG.saturdayEnd;
-  return WAKE_OPTIONS.map(function(target){
-    var wakeClock = nextOccurrenceOfMinuteOfDay(from, target);
-    return { wakeClock: wakeClock, hours: (wakeClock - from)/60 };
+  var opts = CONFIG.sleep.wakeOptions.slice();
+  if(state.loadout.alarmClock) opts.unshift(CONFIG.sleep.alarmWake);
+  return opts.map(function(o){
+    var wakeClock = nextOccurrenceOfMinuteOfDay(from, o.minuteOfDay);
+    var hours = (wakeClock - from)/60;
+    return { wakeClock: wakeClock, hours: hours, rate: o.rate, badRate: o.badRate, alarm: o===CONFIG.sleep.alarmWake, ceilingBonus: longSleepCeilingBonus(hours) };
   });
+}
+/* Every full hour of sleep past longSleepBonusFromHours lifts Sunday's
+   energy ceiling by one — the reward for making camp early. */
+function longSleepCeilingBonus(hours){
+  return clamp(Math.floor(hours) - CONFIG.sleep.longSleepBonusFromHours, 0, CONFIG.sleep.longSleepBonusMax);
 }
 
 /* Preview of what a given wake option would restore, given the player's
@@ -2900,24 +3171,25 @@ function wakeOptions(){
    picking one to show and hoping it's the one that lands. There's no
    more hidden ceiling either — a long enough sleep can now take you
    all the way back to full. */
-function sleepEnergyPreview(hours){
-  var goodGain = Math.round(Math.min(100, state.energy + hours*CONFIG.sleep.tentRate) - state.energy);
-  var badGain = Math.round(Math.min(100, state.energy + hours*CONFIG.sleep.tentBadRate) - state.energy);
-  return { goodGain: goodGain, badGain: badGain };
+function sleepEnergyPreview(opt){
+  var ceiling = 100 + opt.ceilingBonus;
+  var goodGain = Math.round(Math.min(ceiling, state.energy + opt.hours*opt.rate) - state.energy);
+  var badGain = Math.round(Math.min(ceiling, state.energy + opt.hours*opt.badRate) - state.energy);
+  return { goodGain: goodGain, badGain: badGain, ceiling: ceiling };
 }
 
 function chooseSleep(wakeClock){
-  state.teaStreak = 0;
-  var badNight = state.forcedBadNight || rnd()<0.3;
+  var opts = wakeOptions();
+  var opt = opts.filter(function(o){ return o.wakeClock===wakeClock; })[0] || opts[0];
+  /* A camp stove keeps the tent warm whatever the weather — no bad nights. */
+  var badNight = !state.loadout.campStove && (state.forcedBadNight || rnd()<0.3);
   state.forcedBadNight = false;
-  var rate = badNight ? CONFIG.sleep.tentBadRate : CONFIG.sleep.tentRate;
-  /* Wake time counts on from when camp was actually finished being made,
-     not from a fixed midnight anchor. */
-  var from = state.campFinishClock!=null ? state.campFinishClock : CONFIG.saturdayEnd;
-  var hours = (wakeClock - from)/60;
+  var rate = badNight ? opt.badRate : opt.rate;
+  var hours = opt.hours;
   var recovered = hours*rate;
-  state.energyCeiling = 100;
-  state.energy = clamp(state.energy + recovered, 0, 100);
+  state.lastTeaClock = null;
+  state.energyCeiling = 100 + opt.ceilingBonus;
+  state.energy = clamp(state.energy + recovered, 0, state.energyCeiling);
   state.clock = wakeClock;
   state.day = "Sunday";
   state.currentZone = null;
@@ -2926,7 +3198,7 @@ function chooseSleep(wakeClock){
   state.activeEffects = [];
   state.phase = "play";
   var sleepDur = fmtDuration(hours*60);
-  addLog((badNight?"A cold, damp night — ":"") + "Woke after " + sleepDur + (/s$/.test(sleepDur) ? "'" : "'s") + " sleep in the tent. Sunday begins, camped at " + SITES[state.currentSite].name + ".", "system");
+  addLog((badNight?"A cold, damp night — ":"") + "Woke after " + sleepDur + (/s$/.test(sleepDur) ? "'" : "'s") + " sleep in the tent" + (opt.ceilingBonus>0 ? ", properly rested: energy can run to " + state.energyCeiling + " today" : "") + ". Sunday begins, camped at " + SITES[state.currentSite].name + ".", "system");
   rollWeather();
   render();
 }
@@ -2941,7 +3213,9 @@ function endGame(submitted, reason){
   state.endReason = reason;
   state.ended = true;
   state.phase = "end";
-  simulateRivals(Math.min(state.clock, CONFIG.deadline));
+  /* Rivals play on to the deadline whatever the player does — calling it
+     early banks your own list but never theirs. */
+  simulateRivals(CONFIG.deadline);
   /* Freeze the personal-best comparison right here, once, so it reads the
      same way whether this is the first look at the results screen or a
      return trip from the checklist — otherwise a second render would find
@@ -2961,10 +3235,16 @@ function rollCosts(){
     mid: CONFIG.binoculars.mid.cost,
     premium: CONFIG.binoculars.premium.cost,
     snackPack: CONFIG.snackPackCostBase,
+    snackBar: CONFIG.snackBarCost,
     scope: CONFIG.scopeCostBase,
     fieldGuide: CONFIG.fieldGuideCostBase,
     weatherproof: CONFIG.weatherproofCostBase,
-    parabolicMic: CONFIG.parabolicMicCostBase
+    parabolicMic: CONFIG.parabolicMicCostBase,
+    headTorch: CONFIG.headTorchCostBase,
+    thermos: CONFIG.thermosCostBase,
+    trailMap: CONFIG.trailMapCostBase,
+    alarmClock: CONFIG.alarmClockCostBase,
+    campStove: CONFIG.campStoveCostBase
   };
 }
 
@@ -3361,12 +3641,22 @@ function renderRegistration(){
       travel: gen.travel,
       positions: gen.positions,
       skill: pick(SKILL_DEFS).key,
+      /* Saturday's weather is rolled now and shown on the shop screen, so
+         the weatherproof kit is an informed bet rather than a blind one.
+         Sunday's is rolled fresh on waking. */
+      weather: pick(WEATHER),
       binoculars: "none",
       snackPacks: 0,
+      snackBars: 0,
       scope: false,
       fieldGuide: false,
       weatherproof: false,
-      parabolicMic: false
+      parabolicMic: false,
+      headTorch: false,
+      thermos: false,
+      trailMap: false,
+      alarmClock: false,
+      campStove: false
     };
   }
   var c = regDraft.costs;
@@ -3375,11 +3665,32 @@ function renderRegistration(){
   if(regDraft.binoculars==="mid") spent += c.mid;
   if(regDraft.binoculars==="premium") spent += c.premium;
   spent += regDraft.snackPacks * c.snackPack;
+  spent += regDraft.snackBars * c.snackBar;
   if(regDraft.scope) spent += c.scope;
   if(regDraft.fieldGuide) spent += c.fieldGuide;
   if(regDraft.weatherproof) spent += c.weatherproof;
   if(regDraft.parabolicMic) spent += c.parabolicMic;
+  if(regDraft.headTorch) spent += c.headTorch;
+  if(regDraft.thermos) spent += c.thermos;
+  if(regDraft.trailMap) spent += c.trailMap;
+  if(regDraft.alarmClock) spent += c.alarmClock;
+  if(regDraft.campStove) spent += c.campStove;
   var left = CONFIG.budget - spent;
+  var wx = regDraft.weather;
+  var wxBelowFloor = wx.mult < CONFIG.effects.weatherproofFloor;
+  var wxNote = wxBelowFloor
+    ? "Worth +" + Math.round((CONFIG.effects.weatherproofFloor/wx.mult - 1)*100) + "% detection all Saturday" + (wx.id==="mist" ? ", and it lifts the misty-water penalty at the wetlands" : "") + ". Sunday's weather is a fresh roll."
+    : "No Saturday benefit in this weather. Sunday's weather is a fresh roll, so it's still insurance.";
+  function optionCard(label, desc, attr, on, cost){
+    return '<div class="shopcard">' +
+      '<div class="icon optics">'+shopIcon("optics")+'</div>' +
+      '<div class="body"><strong>'+label+'</strong><div class="desc">'+desc+'</div></div>' +
+      '<div class="radiogrp ctrl">' +
+        '<button type="button" class="chip'+(!on?" active":"")+'" data-'+attr+'="0">Skip</button>' +
+        '<button type="button" class="chip'+(on?" active":"")+'" data-'+attr+'="1">Bring it &middot; '+cost+' pts</button>' +
+      '</div>' +
+    '</div>';
+  }
 
   var bestScore = getBestScore();
 
@@ -3403,7 +3714,7 @@ function renderRegistration(){
         '<h2><span class="n">2</span> SHOPPING LIST</h2>' +
         '<div class="shopcard">' +
           '<div class="icon skill">'+shopIcon("skill")+'</div>' +
-          '<div class="body"><strong>Your specialist: '+skillDef.label+'</strong><div class="desc">'+skillDef.desc+'.<br />Every team turns up with one specialist, assigned at random and free of charge, each game. Play to their strengths.</div></div>' +
+          '<div class="body"><strong>Your specialist: '+skillDef.label+'</strong><div class="desc">'+skillDef.desc+'.'+(skillDef.note ? ' '+skillDef.note : '')+'<br />Every team turns up with one specialist, assigned at random and free of charge, each game. Play to their strengths.</div></div>' +
         '</div>' +
         '<div class="shopcard">' +
           '<div class="icon optics">'+shopIcon("optics")+'</div>' +
@@ -3424,7 +3735,7 @@ function renderRegistration(){
         '</div>' +
         '<div class="shopcard">' +
           '<div class="icon optics">'+shopIcon("optics")+'</div>' +
-          '<div class="body"><strong>Field guide app</strong><div class="desc">+15% ID on the confusing groups &mdash; honeyeaters, LBJs, waders</div></div>' +
+          '<div class="body"><strong>Field guide app</strong><div class="desc">+'+Math.round((CONFIG.effects.fieldGuideMult-1)*100)+'% ID on the confusing groups &mdash; honeyeaters, thornbills, robins, ducks, crakes and waders</div></div>' +
           '<div class="radiogrp ctrl">' +
             '<button type="button" class="chip'+(!regDraft.fieldGuide?" active":"")+'" data-fg="0">Skip</button>' +
             '<button type="button" class="chip'+(regDraft.fieldGuide?" active":"")+'" data-fg="1">Bring it &middot; '+c.fieldGuide+' pts</button>' +
@@ -3432,7 +3743,7 @@ function renderRegistration(){
         '</div>' +
         '<div class="shopcard">' +
           '<div class="icon optics">'+shopIcon("optics")+'</div>' +
-          '<div class="body"><strong>Weatherproof kit</strong><div class="desc">Bad weather and misty wetlands never cost you more than 5% detection, whatever the forecast throws at you</div></div>' +
+          '<div class="body"><strong>Weatherproof kit</strong><div class="desc">Saturday forecast: <b>'+esc(wx.label)+'</b>. '+wxNote+'<br>Bad weather and misty wetlands never cost you more than 5% detection with the kit</div></div>' +
           '<div class="radiogrp ctrl">' +
             '<button type="button" class="chip'+(!regDraft.weatherproof?" active":"")+'" data-wx="0">Skip</button>' +
             '<button type="button" class="chip'+(regDraft.weatherproof?" active":"")+'" data-wx="1">Bring it &middot; '+c.weatherproof+' pts</button>' +
@@ -3440,19 +3751,33 @@ function renderRegistration(){
         '</div>' +
         '<div class="shopcard">' +
           '<div class="icon optics">'+shopIcon("optics")+'</div>' +
-          '<div class="body"><strong>Parabolic mic</strong><div class="desc">+'+Math.round((CONFIG.effects.parabolicMicDetectMult-1)*100)+'% detection, +'+Math.round((CONFIG.effects.parabolicMicIdMult-1)*100)+'% ID on anything you\'d otherwise only hear &mdash; owls, nightjars, the bittern</div></div>' +
+          '<div class="body"><strong>Parabolic mic</strong><div class="desc">+'+Math.round((CONFIG.effects.parabolicMicDetectMult-1)*100)+'% detection on anything you\'d otherwise only hear &mdash; owls, nightjars, the bittern &mdash; and on <em>everything</em> in the Pre-dawn and Evening windows, when birds call before you can see them. +'+Math.round((CONFIG.effects.parabolicMicIdMult-1)*100)+'% ID on the heard-only birds</div></div>' +
           '<div class="radiogrp ctrl">' +
             '<button type="button" class="chip'+(!regDraft.parabolicMic?" active":"")+'" data-mic="0">Skip</button>' +
             '<button type="button" class="chip'+(regDraft.parabolicMic?" active":"")+'" data-mic="1">Bring it &middot; '+c.parabolicMic+' pts</button>' +
           '</div>' +
         '</div>' +
+        optionCard("Head torch", "Nocturnal birds +"+Math.round((CONFIG.effects.headTorchNocturnalMult-1)*100)+"% detection before dawn, at dusk and after dark, and a spotlit night walk can still turn up roosting bush birds (at "+Math.round(CONFIG.effects.headTorchNightBushMult*100)+"% of their daytime odds). Saturday night stops being dead time", "ht", regDraft.headTorch, c.headTorch) +
+        optionCard("Thermos", "Tea breaks take "+CONFIG.teaBreak.thermosMinutes+" minutes instead of "+CONFIG.teaBreak.minutes, "th", regDraft.thermos, c.thermos) +
+        optionCard("Trail map", "The odds at a site fade more slowly the longer you work it &mdash; after two hours you\'re at "+Math.round(Math.pow(CONFIG.timeOnSiteDecayTrailMap,8)*100)+"% of fresh odds instead of "+Math.round(Math.pow(CONFIG.timeOnSiteDecay,8)*100)+"%", "tm", regDraft.trailMap, c.trailMap) +
+        optionCard("Alarm clock", "Adds a 3:30am wake on Sunday &mdash; an extra hour of owling before first light, at the short-night recovery rate", "ac", regDraft.alarmClock, c.alarmClock) +
+        optionCard("Camp stove", "No cold, damp nights: sleep always recovers at the full rate, whatever the weather does (a cold front included)", "cs", regDraft.campStove, c.campStove) +
         '<div class="shopcard">' +
           '<div class="icon food">'+shopIcon("food")+'</div>' +
-          '<div class="body"><strong>Snacks</strong><div class="desc">Pack of 5 &middot; +'+CONFIG.snackRestore+' energy each, instant, usable mid-encounter</div></div>' +
+          '<div class="body"><strong>Snacks</strong><div class="desc">Pack of '+CONFIG.snackPackSize+' &middot; +'+CONFIG.snackRestore+' energy each, instant, usable mid-encounter</div></div>' +
           '<div class="stepper ctrl">' +
             '<button type="button" id="snackMinus">&minus;</button>' +
             '<span class="mono">'+regDraft.snackPacks+' pack'+(regDraft.snackPacks===1?"":"s")+' ('+c.snackPack+' pts ea)</span>' +
             '<button type="button" id="snackPlus">+</button>' +
+          '</div>' +
+        '</div>' +
+        '<div class="shopcard">' +
+          '<div class="icon food">'+shopIcon("food")+'</div>' +
+          '<div class="body"><strong>Loose snack bars</strong><div class="desc">The same bar, sold singly &mdash; for whatever\'s left in the budget</div></div>' +
+          '<div class="stepper ctrl">' +
+            '<button type="button" id="barMinus">&minus;</button>' +
+            '<span class="mono">'+regDraft.snackBars+' bar'+(regDraft.snackBars===1?"":"s")+' ('+c.snackBar+' pts ea)</span>' +
+            '<button type="button" id="barPlus">+</button>' +
           '</div>' +
         '</div>' +
       '</div>' +
@@ -3468,8 +3793,15 @@ function renderRegistration(){
   root.querySelectorAll("[data-fg]").forEach(function(b){ b.addEventListener("click", function(){ regDraft.fieldGuide = b.getAttribute("data-fg")==="1"; renderRegistration(); }); });
   root.querySelectorAll("[data-wx]").forEach(function(b){ b.addEventListener("click", function(){ regDraft.weatherproof = b.getAttribute("data-wx")==="1"; renderRegistration(); }); });
   root.querySelectorAll("[data-mic]").forEach(function(b){ b.addEventListener("click", function(){ regDraft.parabolicMic = b.getAttribute("data-mic")==="1"; renderRegistration(); }); });
+  root.querySelectorAll("[data-ht]").forEach(function(b){ b.addEventListener("click", function(){ regDraft.headTorch = b.getAttribute("data-ht")==="1"; renderRegistration(); }); });
+  root.querySelectorAll("[data-th]").forEach(function(b){ b.addEventListener("click", function(){ regDraft.thermos = b.getAttribute("data-th")==="1"; renderRegistration(); }); });
+  root.querySelectorAll("[data-tm]").forEach(function(b){ b.addEventListener("click", function(){ regDraft.trailMap = b.getAttribute("data-tm")==="1"; renderRegistration(); }); });
+  root.querySelectorAll("[data-ac]").forEach(function(b){ b.addEventListener("click", function(){ regDraft.alarmClock = b.getAttribute("data-ac")==="1"; renderRegistration(); }); });
+  root.querySelectorAll("[data-cs]").forEach(function(b){ b.addEventListener("click", function(){ regDraft.campStove = b.getAttribute("data-cs")==="1"; renderRegistration(); }); });
   document.getElementById("snackMinus").addEventListener("click", function(){ regDraft.snackPacks = Math.max(0, regDraft.snackPacks-1); renderRegistration(); });
   document.getElementById("snackPlus").addEventListener("click", function(){ regDraft.snackPacks = Math.min(5, regDraft.snackPacks+1); renderRegistration(); });
+  document.getElementById("barMinus").addEventListener("click", function(){ regDraft.snackBars = Math.max(0, regDraft.snackBars-1); renderRegistration(); });
+  document.getElementById("barPlus").addEventListener("click", function(){ regDraft.snackBars = Math.min(CONFIG.snackPackSize-1, regDraft.snackBars+1); renderRegistration(); });
   var beginBtn = document.getElementById("beginBtn");
   if(beginBtn) beginBtn.addEventListener("click", startGame);
 }
@@ -3610,6 +3942,11 @@ function renderMapSvg(positions, travel, highlightId, traveledEdges, remainCount
     }
 
     var iconColor = C.icon;
+    var closedHere = isSiteClosed(id);
+    if(closedHere && !isCurrent){
+      parts.push('<line x1="'+(p.x-r-3).toFixed(1)+'" y1="'+(p.y-r-3).toFixed(1)+'" x2="'+(p.x+r+3).toFixed(1)+'" y2="'+(p.y+r+3).toFixed(1)+'" stroke="'+C.currentRing+'" stroke-width="2.5" opacity="0.9"/>');
+      parts.push('<line x1="'+(p.x+r+3).toFixed(1)+'" y1="'+(p.y-r-3).toFixed(1)+'" x2="'+(p.x-r-3).toFixed(1)+'" y2="'+(p.y+r+3).toFixed(1)+'" stroke="'+C.currentRing+'" stroke-width="2.5" opacity="0.9"/>');
+    }
     if(isCurrent){
       parts.push('<circle class="pulse-ring" cx="'+p.x.toFixed(1)+'" cy="'+p.y.toFixed(1)+'" r="'+(r+5)+'" fill="none" stroke="'+C.currentRing+'" stroke-width="2.5"/>');
       parts.push('<circle cx="'+p.x.toFixed(1)+'" cy="'+p.y.toFixed(1)+'" r="'+(r+1)+'" fill="none" stroke="'+C.currentRing+'" stroke-width="1" opacity="0.6"/>');
@@ -3627,7 +3964,7 @@ function renderMapSvg(positions, travel, highlightId, traveledEdges, remainCount
        every current name is short enough to sit comfortably on one line. */
     parts.push('<text x="'+labelX+'" y="'+(p.y+3.5).toFixed(1)+'" font-family="JetBrains Mono, monospace" font-size="10.5" letter-spacing="0.5" font-weight="'+nameWeight+'" fill="'+C.text+'">'+esc(s.name.toUpperCase())+'</text>');
     if(rc){
-      parts.push('<text x="'+labelX+'" y="'+(p.y+13.5).toFixed(1)+'" font-family="JetBrains Mono, monospace" font-size="8.5" fill="'+C.textMuted+'" opacity="0.9">'+rc.seen+'/'+rc.total+'</text>');
+      parts.push('<text x="'+labelX+'" y="'+(p.y+13.5).toFixed(1)+'" font-family="JetBrains Mono, monospace" font-size="8.5" fill="'+C.textMuted+'" opacity="0.9">'+rc.seen+'/'+rc.total+(closedHere?' &middot; CLOSED':'')+'</text>');
     }
     if(!isCurrent && travel){
       var shortest = shortestPath(highlightId, id);
@@ -3666,13 +4003,14 @@ function startGame(){
   state.travel = regDraft.travel;
   state.positions = regDraft.positions;
   state.loadout = {
-    binoculars: regDraft.binoculars, snackPacks: regDraft.snackPacks, scope: regDraft.scope, fieldGuide: regDraft.fieldGuide,
+    binoculars: regDraft.binoculars, snackPacks: regDraft.snackPacks, snackBars: regDraft.snackBars, scope: regDraft.scope, fieldGuide: regDraft.fieldGuide,
     weatherproof: regDraft.weatherproof, parabolicMic: regDraft.parabolicMic,
+    headTorch: regDraft.headTorch, thermos: regDraft.thermos, trailMap: regDraft.trailMap, alarmClock: regDraft.alarmClock, campStove: regDraft.campStove,
     skill: regDraft.skill,
     youngEyes: regDraft.skill==="youngEyes", twitchersNose: regDraft.skill==="twitchersNose",
     ironConstitution: regDraft.skill==="ironConstitution", backroads: regDraft.skill==="backroads"
   };
-  state.snackBars = regDraft.snackPacks * CONFIG.snackPackSize;
+  state.snackBars = regDraft.snackPacks * CONFIG.snackPackSize + (regDraft.snackBars||0);
   var bino = CONFIG.binoculars[regDraft.binoculars];
   state.binocDet = bino.det + (state.loadout.youngEyes ? CONFIG.youngEyes.detBonus : 0);
   state.binocId = bino.id;
@@ -3693,7 +4031,7 @@ function startGame(){
   });
   RIVAL_DEFS.forEach(function(r){ state.rivals.smart[r.key] = createSmartBot(r.key); });
   state.phase = "play";
-  rollWeather();
+  rollWeather(regDraft.weather);
   addLog("First light at " + SITES[state.currentSite].name + ". “" + esc(state.teamName) + "” roll out at 4:30am.", "system");
   regDraft = null;
   render();
@@ -3771,6 +4109,12 @@ function renderActivityTab(){
     if(e.type==="windPickup") return '<span class="alert-pill">Windy</span>';
     if(e.type==="gearFumble") return '<span class="alert-pill">Fumbled gear</span>';
     if(e.type==="luckyBreak") return '<span class="alert-pill">Lucky break ready</span>';
+    if(e.type==="fogBurnsOff") return '<span class="alert-pill">Fog burnt off</span>';
+    if(e.type==="trackClosed") return '<span class="alert-pill">'+esc(e.label)+'</span>';
+    if(e.type==="mozzies") return '<span class="alert-pill">'+esc(e.label)+'</span>';
+    if(e.type==="heatHaze") return '<span class="alert-pill">Heat haze</span>';
+    if(e.type==="secondEyes") return '<span class="alert-pill">Second pair of eyes</span>';
+    if(e.type==="hideTip") return '<span class="alert-pill">Hide tip</span>';
     return "";
   }).filter(Boolean).join("");
   if(state.roadworksPending>0) alerts += '<span class="alert-pill">Roadworks ahead</span>';
@@ -3782,8 +4126,8 @@ function renderActivityTab(){
     '<div class="hud'+((state.weatherMult||1)<0.95?" wx-poor":"")+'">' +
       '<div class="hud-left"><span class="clock mono">'+fmtClock(state.clock)+'</span><span class="site"><span class="loc-label">Current Location: </span><span id="hudLocationName">'+esc(site.name)+(state.campSiteId===state.currentSite?" (camp)":"")+'</span> <span class="muted mono" style="font-size:.78em">'+siteRc.seen+'/'+siteRc.total+'</span></span></div>' +
       '<div class="hud-mid">' +
-        '<div class="ebar-track"><div class="ebar-fill" style="width:'+state.energy+'%;background:var(--'+tier.tone+')"></div></div>' +
-        '<span class="mono" style="font-size:.8rem">'+Math.round(state.energy)+(state.energyCeiling<100 ? "/"+state.energyCeiling : "")+' &middot; '+tier.name+'</span>' +
+        '<div class="ebar-track"><div class="ebar-fill" style="width:'+Math.min(100, state.energy/state.energyCeiling*100)+'%;background:var(--'+tier.tone+')"></div></div>' +
+        '<span class="mono" style="font-size:.8rem">'+Math.round(state.energy)+(state.energyCeiling!==100 ? "/"+state.energyCeiling : "")+' &middot; '+tier.name+'</span>' +
       '</div>' +
       '<div class="hud-right">' +
         '<span><span class="k">Species</span><span class="val hero">'+speciesCount+'</span></span>' +
@@ -3793,9 +4137,9 @@ function renderActivityTab(){
       '</div>' +
     '</div>' +
     '<div class="rivalbar">' +
-      '<span class="rivalbar-label">Team Scores:</span>' +
+      '<span class="rivalbar-label">Standings (word of mouth):</span>' +
       '<span>'+esc(state.teamName)+' (You) <b>'+speciesCount+'</b></span>' +
-      RIVAL_DEFS.map(function(r){ return '<span>'+esc(r.name)+' <b>'+state.rivals.counts[r.key]+'</b></span>'; }).join("") +
+      RIVAL_DEFS.map(function(r){ return '<span>'+esc(r.name)+' <b>'+rivalDisplayCount(r.key)+'</b></span>'; }).join("") +
       (bestScore!==null ? '<span class="pb">Your best: '+bestScore+'</span>' : '') +
     '</div>' +
     (odds ?
@@ -3805,7 +4149,7 @@ function renderActivityTab(){
         '<div class="oddsbar-line"><span class="oname">Chance of identifying detected birds</span><span class="opct">'+Math.round(odds.idPct*100)+'%</span></div>' +
         (odds.idMods.length ? '<div class="oddsbar-mods">'+renderModChips(odds.idMods)+'</div>' : '') +
       '</div>'
-      : '<div class="oddsbar muted">Everything left here for this visit is already ticked off.</div>') +
+      : '<div class="oddsbar muted">Nothing here would be new for your list this visit.</div>') +
     (alerts ? '<div class="alerts">'+alerts+'</div>' : '') +
     (state.log.length<=1 ? '<div class="onboard-hint">New here? Hit <strong>Go Birding</strong> below to start watching. Each watch has a chance of turning up a species, which you then have to <strong>identify</strong> before it counts. Not sure what a spot has got? Check the <strong>Checklist</strong> tab for who&rsquo;s around, or the <strong>Travel</strong> tab to move on somewhere else. Confirmed species build your list until the deadline. Most species, not most sightings, wins.</div>' : '') +
     '<div class="tray-wrap"><div class="tray">' +
@@ -3818,6 +4162,16 @@ function renderActivityTab(){
     (hiddenCount>0 ? '<p class="muted" style="padding:0 16px 6px;font-size:.8rem;">Showing the last '+visibleLog.length+' entries &middot; '+hiddenCount+' earlier this weekend.</p>' : '') +
     '<div class="log" id="logPane">' + visibleLog.slice().reverse().map(function(e,i){ return renderLogEntry(e, i===0); }).join("") + '</div>' +
   '</div>';
+}
+
+/* Live standings are word of mouth: a rival's count is rounded to the
+   nearest five unless that team told you their exact number in the last
+   three hours (the rivalEncounter event). The camp and results screens
+   show the exact table. */
+function rivalDisplayCount(key){
+  var rep = state.rivals.reported && state.rivals.reported[key];
+  if(rep && state.clock - rep.clock <= 180) return String(rep.count);
+  return "~" + (Math.round(state.rivals.counts[key]/5)*5);
 }
 
 /* ---- Checklist tab: the full collection view, now a persistent destination ---- */
@@ -3891,8 +4245,8 @@ function renderAnim(count){
     '<div class="hud">' +
       '<div class="hud-left"><span class="clock mono">'+fmtClock(cVal)+'</span><span class="site"><span class="loc-label">Current Location: </span>'+esc(site.name)+'</span></div>' +
       '<div class="hud-mid">' +
-        '<div class="ebar-track"><div class="ebar-fill" style="width:'+eVal+'%;background:var(--'+tier.tone+')"></div></div>' +
-        '<span class="mono" style="font-size:.8rem">'+eVal+(state.energyCeiling<100 ? "/"+state.energyCeiling : "")+' &middot; '+tier.name+'</span>' +
+        '<div class="ebar-track"><div class="ebar-fill" style="width:'+Math.min(100, eVal/state.energyCeiling*100)+'%;background:var(--'+tier.tone+')"></div></div>' +
+        '<span class="mono" style="font-size:.8rem">'+eVal+(state.energyCeiling!==100 ? "/"+state.energyCeiling : "")+' &middot; '+tier.name+'</span>' +
       '</div>' +
       '<div class="hud-right"><span><span class="k">Species</span><span class="val hero">'+sVal+'</span></span></div>' +
     '</div>' +
@@ -3925,7 +4279,7 @@ function renderAmbiguousPanel(){
   return '<div class="inlinepanel ambiguous-panel">' +
     '<h3>What was that?</h3>' +
     '<p class="sub">It could possibly be a '+esc(spx.name)+', but you&rsquo;re not sure&hellip;</p>' +
-    '<p class="sub">'+CONFIG.keepLookingTime+' minutes and '+keepLookingEnergyCost()+' energy per extra look &mdash; attempt <span class="attempt-badge">'+(amb.attempts+1)+'</span></p>' +
+    '<p class="sub">Next look: '+CONFIG.keepLooking[Math.min(amb.attempts,2)].minutes+' minutes, '+keepLookingEnergyCost(amb.attempts+1)+' energy, '+Math.round(keepLookingFlush(amb.attempts+1)*100)+'% chance it flushes &mdash; attempt <span class="attempt-badge">'+(amb.attempts+1)+'</span></p>' +
     '<div class="optlist">' +
       '<button class="optbtn" id="ambKeep" '+(cooked?"disabled":"")+'><span class="oname">Keep searching</span><span class="ometa">+time, better odds, risk of scaring it away</span></button>' +
       '<button class="optbtn" id="ambLog"><span class="oname">Ignore and move on</span><span class="ometa">no credit, banked as a mystery</span></button>' +
@@ -4064,9 +4418,10 @@ function renderTravelTab(){
   var siteCounts = siteRemainingCounts();
   var locByLabel = locationCountsByLabel();
   var zoneBlock = "";
-  if(state.currentSite==="ninetymile"){
-    var zoneOpts = SITES.ninetymile.zones.filter(function(z){ return z.id!==state.currentZone; }).map(function(z){
-      var zc = locByLabel[SITES.ninetymile.name+" — "+z.name] || {remaining:0,total:0};
+  var curBase = SITES[state.currentSite];
+  if(curBase.zones){
+    var zoneOpts = curBase.zones.filter(function(z){ return z.id!==state.currentZone; }).map(function(z){
+      var zc = locByLabel[curBase.name+" — "+z.name] || {remaining:0,total:0};
       var zoneCrosses = wouldCrossCutoff(20);
       return '<button class="optbtn" data-zone="'+z.id+'" '+(zoneCrosses?"disabled":"")+'><span class="oname">'+esc(z.name)+' <span class="muted mono" style="font-size:.78em">'+zc.seen+'/'+zc.total+'</span></span><span class="ometa">~20 min on foot'+(zoneCrosses?' &middot; runs past '+cutoffLabel():'')+'</span></button>';
     }).join("");
@@ -4080,8 +4435,9 @@ function renderTravelTab(){
     /* Can't set off on a drive that wouldn't get you there before today's
        hard cutoff. */
     var crosses = wouldCrossCutoff(t);
-    var travelMeta = t+' min'+raptorNote+(crosses?' &middot; runs past '+cutoffLabel():'');
-    return '<button class="optbtn" data-travel="'+id+'" '+(crosses?"disabled":"")+'><span class="oname">'+esc(s.name)+' <span class="muted mono" style="font-size:.78em">'+rc.seen+'/'+rc.total+'</span></span><span class="ometa">'+travelMeta+'</span></button>';
+    var closed = isSiteClosed(id);
+    var travelMeta = t+' min'+raptorNote+(crosses?' &middot; runs past '+cutoffLabel():'')+(closed?' &middot; track closed':'');
+    return '<button class="optbtn" data-travel="'+id+'" '+((crosses||closed)?"disabled":"")+'><span class="oname">'+esc(s.name)+' <span class="muted mono" style="font-size:.78em">'+rc.seen+'/'+rc.total+'</span></span><span class="ometa">'+travelMeta+'</span></button>';
   }).join("");
   var tableBlock = state.travelTableOpen ? '<div class="tblwrap" style="margin-top:10px">'+renderTravelTable(state.travel)+'</div>' : '';
   var guideBlock = state.siteGuideOpen ? '<div style="margin-top:10px">'+renderSiteGuide(siteCounts)+'</div>' : '';
@@ -4301,26 +4657,28 @@ function renderCamp(){
       '</div>' +
       '<div class="card">' +
         '<h2>When do you wake?</h2>' +
-        '<p class="muted" style="font-size:.85rem;margin-top:0">Earlier means less energy back, but Sunday always ends at 3:00pm regardless of when you wake. Sleeping in the tent tonight'+(state.forcedBadNight?" — and it's turned cold and wet.":".")+'</p>' +
+        '<p class="muted" style="font-size:.85rem;margin-top:0">Earlier means less energy back at a slower rate; a lie-in recovers faster, and every full hour past '+CONFIG.sleep.longSleepBonusFromHours+' lifts Sunday\'s energy ceiling by one. Sunday always ends at 3:00pm regardless. Sleeping in the tent tonight'+(state.loadout.campStove ? " — the camp stove keeps it warm whatever the weather does." : (state.forcedBadNight?" — and it's turned cold and wet.":"."))+'</p>' +
         '<div class="tray" style="padding:0">' +
           wakeOptions().map(function(opt){
             var wake = fmtClock(opt.wakeClock).split(" ")[1];
-            var prev = sleepEnergyPreview(opt.hours);
+            var prev = sleepEnergyPreview(opt);
             /* Camping can now happen as early as 8pm with energy still
                near full (say, right after a tea break) — sleep genuinely
                can't add anything past 100, so say so plainly rather than
                showing a bare "+0 energy" that reads like a glitch. */
             var note;
+            var coldPossible = !state.loadout.campStove;
             if(prev.goodGain<=0 && prev.badGain<=0){
-              note = "already topped up" + (state.forcedBadNight ? " (cold night)" : "");
-            } else if(state.forcedBadNight){
+              note = "already topped up" + (coldPossible && state.forcedBadNight ? " (cold night)" : "");
+            } else if(coldPossible && state.forcedBadNight){
               note = "+"+prev.badGain+" energy (cold night)";
-            } else if(prev.goodGain===prev.badGain){
+            } else if(!coldPossible || prev.goodGain===prev.badGain){
               note = "+"+prev.goodGain+" energy";
             } else {
               note = "+"+prev.goodGain+" energy, or +"+prev.badGain+" if it turns cold";
             }
-            return '<button class="sleep-btn" data-sleep="'+opt.wakeClock+'">Wake at '+wake+'<span class="mono energy-note">'+fmtDuration(opt.hours*60)+' sleep &middot; '+note+'</span></button>';
+            if(opt.ceilingBonus>0) note += " &middot; ceiling "+prev.ceiling;
+            return '<button class="sleep-btn" data-sleep="'+opt.wakeClock+'">Wake at '+wake+(opt.alarm?' (alarm)':'')+'<span class="mono energy-note">'+fmtDuration(opt.hours*60)+' sleep &middot; '+note+'</span></button>';
           }).join("") +
         '</div>' +
       '</div>' +
